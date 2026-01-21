@@ -1,98 +1,95 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import {
-  ResponsiveContainer,
-  BarChart, Bar,
-  XAxis, YAxis,
+  ResponsiveContainer, BarChart,
+  Bar, XAxis, YAxis,
   Tooltip, Legend, CartesianGrid
 } from "recharts";
 import { Loader2 } from "lucide-react";
+import { formatNumber, formatDate, scoreColor } from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
-const normalizeTicker = (s) => {
-  if (!s) return "";
-  s = s.toUpperCase();
-  if (s.length === 4 && !s.endsWith(".JK")) return `${s}.JK`;
-  return s;
-};
-
-const formatUnit = (n) => {
-  if (!n) return "-";
-  if (Math.abs(n) >= 1e12) return (n / 1e12).toFixed(2) + " T";
-  if (Math.abs(n) >= 1e9) return (n / 1e9).toFixed(2) + " B";
-  return n.toLocaleString("id-ID");
-};
-
 const CashflowChart = ({ symbol }) => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [json, setJson] = useState(null);
 
   useEffect(() => {
     if (!symbol) return;
+    const t = symbol.length === 4 ? symbol + ".JK" : symbol;
 
-    const fetchData = async () => {
-      setLoading(true);
-      const t = normalizeTicker(symbol);
-
-      const res = await fetch(
-        `${API_BASE}/api/chart/cashflow/${t}`
-      );
-
-      const json = await res.json();
-
-      setData(json.chart);
-      setLoading(false);
-    };
-
-    fetchData();
+    fetch(`${API_BASE}/api/chart/cashflow/${t}?limit=10`)
+      .then(r => r.json())
+      .then(setJson);
   }, [symbol]);
 
-  if (loading)
-    return (
-      <div className="h-[350px] flex items-center justify-center">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
+  if (!json)
+    return <Loader2 className="animate-spin mx-auto mt-10" />;
 
   return (
-    <div className="bg-[#0B1221] p-6 rounded-xl border border-gray-800">
-      <h3 className="text-white font-semibold mb-3">
-        Arus Kas
+    <div>
+      <h3 className="font-semibold mb-3">
+        Cashflow
       </h3>
 
-      <div className="h-[320px]">
+      <div className="h-[340px]">
         <ResponsiveContainer>
-          <BarChart data={data}>
+          <BarChart data={json.chart}>
             <CartesianGrid stroke="#1e293b" />
 
-            <XAxis dataKey="date" />
-            <YAxis tickFormatter={formatUnit} />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              tick={{ fill: "#fff" }}
+            />
 
-            <Tooltip />
+            <YAxis tickFormatter={formatNumber} />
+
+            <Tooltip
+              formatter={(v) => formatNumber(v)}
+              labelFormatter={formatDate}
+            />
+
             <Legend />
 
             <Bar
               dataKey="operating"
-              fill="#7c3aed"
+              fill="#6D28D9"
               name="Operating"
             />
 
             <Bar
               dataKey="investing"
-              fill="#3b82f6"
+              fill="#3B82F6"
               name="Investing"
             />
 
             <Bar
               dataKey="financing"
-              fill="#ef4444"
+              fill="#EF4444"
               name="Financing"
             />
+
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* SCORE */}
+      <div className="mt-4 p-4 bg-gray-800/50 rounded">
+        <span className={`
+          inline-block px-3 py-1 rounded-full
+          text-sm font-bold
+          ${scoreColor(json.score.status)}
+        `}>
+          Skor {json.score.score} - {json.score.status}
+        </span>
+
+        <ul className="list-disc ml-5 mt-3 text-sm">
+          {json.score.notes.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
 };
 
-export default CashflowChart;
+export default memo(CashflowChart);

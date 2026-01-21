@@ -1,25 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Loader2, StopCircle } from 'lucide-react';
 import ChatMessage from './components/ChatMessage';
-import StockChart from './components/StockChart';
-import FundamentalSlider from './components/FundamentalSlider';
+import TabChart from './components/TabChart';
 
 function App() {
 
-  // ===== VPS API =====
-  const CHART_API =
-    "https://api.indonesiastockanalyst.my.id/api/chart";
-
-  const FUNDAMENTAL_API =
-    "https://api.indonesiastockanalyst.my.id/api/chart/fundamental";
-
-  const BALANCE_API =
-    "https://api.indonesiastockanalyst.my.id/api/chart/balance";
-
-  const CASHFLOW_API =
-    "https://api.indonesiastockanalyst.my.id/api/chart/cashflow";
-
-  // ❌ JANGAN DIUBAH
   const N8N_WEBHOOK_URL =
     "https://tutorial-n8n.indonesiastockanalyst.my.id/webhook-test/analisa-saham";
 
@@ -36,6 +21,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const abortRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,12 +43,16 @@ function App() {
 
     const ticker = normalizeTicker(input.trim());
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setMessages(prev => [
       ...prev,
       { role: 'user', content: ticker },
       {
         role: 'assistant',
-        content: "",
+        content: "📊 Memuat grafik...",
         isLoading: true,
         ticker
       }
@@ -71,60 +61,22 @@ function App() {
     setInput('');
     setIsLoading(true);
 
-    const controller = new AbortController();
-
     try {
-
-      // ===== PARALLEL FETCH =====
-      const pricePromise = fetch(
-        `${CHART_API}/${ticker}`,
-        { signal: controller.signal }
-      );
-
-      const fundamentalPromise = fetch(
-        `${FUNDAMENTAL_API}/${ticker}`
-      );
-
-      const balancePromise = fetch(
-        `${BALANCE_API}/${ticker}`
-      );
-
-      const cashflowPromise = fetch(
-        `${CASHFLOW_API}/${ticker}`
-      );
-
-      const analysisPromise = fetch(N8N_WEBHOOK_URL, {
+      const res = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: ticker })
+        body: JSON.stringify({ prompt: ticker }),
+        signal: controller.signal
       });
 
-      // ===== LOAD CHARTS =====
-      await Promise.all([
-        pricePromise,
-        fundamentalPromise,
-        balancePromise,
-        cashflowPromise
-      ]);
-
-      setMessages(prev => {
-        const m = [...prev];
-        const last = m[m.length - 1];
-        last.content =
-          "**📊 Semua grafik berhasil dimuat, menyusun analisis...**";
-        return m;
-      });
-
-      // ===== ANALYSIS =====
-      const analysisRes = await analysisPromise;
-      const analysis = await analysisRes.json();
+      const json = await res.json();
 
       setMessages(prev => {
         const m = [...prev];
         const last = m[m.length - 1];
 
         last.content =
-          analysis.output ||
+          json.output ||
           "Maaf, analisis tidak tersedia.";
 
         last.isLoading = false;
@@ -132,15 +84,15 @@ function App() {
       });
 
     } catch (err) {
-      console.error(err);
+      if (err.name === "AbortError") return;
 
       setMessages(prev => {
         const m = [...prev];
         const last = m[m.length - 1];
 
         last.content =
-          "**❌ Gagal mengambil data saham.**\n" +
-          "Periksa koneksi atau kode saham.";
+          "❌ Gagal mengambil analisis.\n" +
+          "Coba ulang kembali.";
 
         last.isLoading = false;
         return m;
@@ -148,12 +100,11 @@ function App() {
 
     } finally {
       setIsLoading(false);
-      controller.abort();
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0f1117] text-gray-100 font-sans">
+    <div className="flex flex-col h-screen bg-[#0f1117] text-gray-100">
 
       {/* NAVBAR */}
       <header className="fixed top-0 w-full bg-[#0f1117]/80 backdrop-blur-md
@@ -172,32 +123,27 @@ function App() {
 
         {messages.map((msg, i) => (
           <div key={i}>
-
-            {msg.role === 'assistant' && msg.ticker && (
-              <div className="max-w-3xl mx-auto px-4 mt-6 space-y-6">
-
-                {/* PRICE */}
-                <StockChart symbol={msg.ticker} />
-
-                {/* FUNDAMENTAL SLIDER */}
-                <FundamentalSlider symbol={msg.ticker} />
-
-              </div>
-            )}
-
+            {/* CHAT MESSAGE DULU */}
             <ChatMessage
               role={msg.role}
               content={msg.content}
             />
+
+            {/* CHART DI BAWAH MESSAGE */}
+            {msg.role === 'assistant' && msg.ticker && !msg.isLoading && (
+              <div className="max-w-3xl mx-auto px-4 mt-6 mb-8 space-y-6">
+                <TabChart symbol={msg.ticker} key={`chart-${msg.ticker}-${i}`} />
+              </div>
+            )}
           </div>
         ))}
 
         {isLoading &&
-          messages.at(-1)?.isLoading && (
+          messages[messages.length - 1]?.isLoading && (
             <div className="w-full py-8">
               <div className="max-w-3xl mx-auto px-4 flex gap-3">
                 <Loader2 className="animate-spin" />
-                <span>Menghubungkan ke Bursa...</span>
+                <span>Menghubungkan ke AI...</span>
               </div>
             </div>
           )}

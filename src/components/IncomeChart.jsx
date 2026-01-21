@@ -1,189 +1,79 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import {
-  ResponsiveContainer,
-  BarChart, Bar,
-  Line, XAxis, YAxis,
+  ResponsiveContainer, ComposedChart,
+  Bar, Line, XAxis, YAxis,
   Tooltip, Legend, CartesianGrid
 } from "recharts";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { formatNumber, formatDate, scoreColor } from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
-const normalizeTicker = (s) => {
-  if (!s) return "";
-  s = s.toUpperCase();
-  if (s.length === 4 && !s.endsWith(".JK")) return `${s}.JK`;
-  return s;
-};
-
-const formatByUnit = (num, unit) => {
-  if (!num) return "-";
-
-  if (unit === "T") return (num / 1e12).toFixed(2) + " T";
-  if (unit === "B") return (num / 1e9).toFixed(2) + " B";
-
-  // AUTO
-  if (num >= 1e12) return (num / 1e12).toFixed(2) + " T";
-  if (num >= 1e9) return (num / 1e9).toFixed(2) + " B";
-  if (num >= 1e6) return (num / 1e6).toFixed(2) + " Jt";
-
-  return num.toLocaleString("id-ID");
-};
-
-const CustomTooltip = ({ active, payload, label, unit }) => {
-  if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
-
-  return (
-    <div className="bg-[#0B1221] border border-gray-700 p-3 rounded-lg text-sm">
-      <p className="font-semibold mb-2 text-gray-200">
-        {label}
-      </p>
-
-      <p className="text-purple-400">
-        Revenue : {formatByUnit(d.revenue, unit)}
-      </p>
-
-      <p className="text-blue-400">
-        Net Income : {formatByUnit(d.net_income, unit)}
-      </p>
-
-      <p className="text-emerald-400">
-        Net Margin : {d.net_margin?.toFixed(2)}%
-      </p>
-    </div>
-  );
-};
-
-const FundamentalChart = ({ symbol }) => {
-  const [data, setData] = useState([]);
-  const [score, setScore] = useState(null);
-  const [unit, setUnit] = useState("AUTO"); // AUTO | B | T
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+const IncomeChart = ({ symbol }) => {
+  const [json, setJson] = useState(null);
 
   useEffect(() => {
     if (!symbol) return;
+    const t = symbol.length === 4 ? symbol + ".JK" : symbol;
 
-    const ticker = normalizeTicker(symbol);
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await fetch(
-          `${API_BASE}/api/chart/fundamental/${ticker}`
-        );
-
-        if (!res.ok) throw new Error("API Error");
-
-        const json = await res.json();
-
-        setData(json.chart);
-        setScore(json.score);
-
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetch(`${API_BASE}/api/chart/fundamental/${t}?limit=10`)
+      .then(r => r.json())
+      .then(setJson);
   }, [symbol]);
 
-  if (loading)
-    return (
-      <div className="h-[420px] flex items-center justify-center text-gray-400">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
-
-  if (error)
-    return (
-      <div className="h-[420px] flex items-center justify-center text-red-400">
-        <AlertCircle className="mr-2" /> {error}
-      </div>
-    );
+  if (!json)
+    return <Loader2 className="animate-spin mx-auto mt-10" />;
 
   return (
-    <div className="bg-[#0B1221] p-6 rounded-xl border border-gray-800">
+    <div>
+      <h3 className="font-semibold mb-3">
+        Income Statement
+      </h3>
 
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white font-semibold">
-          Income Statement
-        </h3>
-
-        {score && (
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold
-              ${score.verdict === "SEHAT"
-                ? "bg-emerald-600/20 text-emerald-400"
-                : score.verdict === "NETRAL"
-                  ? "bg-yellow-600/20 text-yellow-400"
-                  : "bg-red-600/20 text-red-400"
-              }`}
-          >
-            {score.verdict} ({score.score})
-          </span>
-        )}
-      </div>
-
-      {/* TOGGLE */}
-      <div className="flex gap-2 mb-3">
-        {["AUTO", "B", "T"].map((u) => (
-          <button
-            key={u}
-            onClick={() => setUnit(u)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold
-              ${unit === u
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 text-gray-300"
-              }`}
-          >
-            {u}
-          </button>
-        ))}
-      </div>
-
-      {/* CHART */}
-      <div className="h-[320px]">
+      <div className="h-[340px]">
         <ResponsiveContainer>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <ComposedChart data={json.chart}>
+            <CartesianGrid stroke="#1e293b" />
 
-            <XAxis dataKey="date" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              tick={{ fill: "#fff" }}
+            />
 
             <YAxis
-              tickFormatter={(v) => formatByUnit(v, unit)}
+              yAxisId="left"
+              tickFormatter={formatNumber}
             />
 
             <YAxis
               yAxisId="right"
               orientation="right"
-              domain={[0, 40]}
-              tickFormatter={(v) => v + "%"}
+              tickFormatter={(v) => v + " %"}
             />
 
             <Tooltip
-              content={
-                <CustomTooltip unit={unit} />
+              formatter={(v, k) =>
+                k === "net_margin"
+                  ? v + " %"
+                  : formatNumber(v)
               }
+              labelFormatter={formatDate}
             />
 
             <Legend />
 
             <Bar
+              yAxisId="left"
               dataKey="revenue"
-              fill="#7c3aed"
+              fill="#6D28D9"
               name="Revenue"
             />
 
             <Bar
+              yAxisId="left"
               dataKey="net_income"
-              fill="#3b82f6"
+              fill="#3B82F6"
               name="Net Income"
             />
 
@@ -191,26 +81,34 @@ const FundamentalChart = ({ symbol }) => {
               yAxisId="right"
               type="monotone"
               dataKey="net_margin"
-              stroke="#10b981"
+              stroke="#5EEAD4"
               strokeWidth={3}
               dot={{ r: 5 }}
-              name="Net Margin"
+              name="Net Margin (%)"
             />
-          </BarChart>
+
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      {/* NOTES */}
-      {score && (
-        <div className="mt-4 space-y-1 text-sm text-gray-400">
-          {score.notes.map((n, i) => (
-            <p key={i}>• {n}</p>
-          ))}
-        </div>
-      )}
+      {/* SCORE */}
+      <div className="mt-4 p-4 bg-gray-800/50 rounded">
+        <span className={`
+          inline-block px-3 py-1 rounded-full
+          text-sm font-bold
+          ${scoreColor(json.score.verdict)}
+        `}>
+          Skor {json.score.score} - {json.score.verdict}
+        </span>
 
+        <ul className="list-disc ml-5 mt-3 text-sm">
+          {json.score.notes.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
 
-export default FundamentalChart;
+export default memo(IncomeChart);

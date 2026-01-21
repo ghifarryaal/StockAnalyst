@@ -1,154 +1,113 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, memo } from "react";
 import {
-  ResponsiveContainer,
-  BarChart, Bar,
-  Line, XAxis, YAxis,
+  ResponsiveContainer, ComposedChart,
+  Bar, Line, XAxis, YAxis,
   Tooltip, Legend, CartesianGrid
 } from "recharts";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { formatNumber, formatDate, scoreColor } from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
-const normalizeTicker = (s) => {
-  if (!s) return "";
-  s = s.toUpperCase();
-  if (s.length === 4 && !s.endsWith(".JK")) return `${s}.JK`;
-  return s;
-};
-
-// ===== FORMAT NUMBER =====
-const formatByUnit = (num) => {
-  if (num === null || num === undefined) return "-";
-
-  if (num >= 1e12) return (num / 1e12).toFixed(2) + " T";
-  if (num >= 1e9) return (num / 1e9).toFixed(2) + " B";
-  if (num >= 1e6) return (num / 1e6).toFixed(2) + " Jt";
-
-  return num.toLocaleString("id-ID");
-};
-
 const BalanceChart = ({ symbol }) => {
-
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [json, setJson] = useState(null);
 
   useEffect(() => {
     if (!symbol) return;
+    const t = symbol.length === 4 ? symbol + ".JK" : symbol;
 
-    const ticker = normalizeTicker(symbol);
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await fetch(
-          `${API_BASE}/api/chart/balance/${ticker}`
-        );
-
-        if (!res.ok)
-          throw new Error("API Error");
-
-        const json = await res.json();
-
-        setData(json.chart || []);
-
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+    fetch(`${API_BASE}/api/chart/balance/${t}?limit=10`)
+      .then(r => r.json())
+      .then(setJson);
   }, [symbol]);
 
-  // ===== LOADING =====
-  if (loading)
-    return (
-      <div className="h-[380px] flex items-center justify-center text-gray-400">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
-
-  // ===== ERROR =====
-  if (error)
-    return (
-      <div className="h-[380px] flex items-center justify-center text-red-400">
-        <AlertCircle className="mr-2" /> {error}
-      </div>
-    );
+  if (!json)
+    return <Loader2 className="animate-spin mx-auto mt-10" />;
 
   return (
-    <div className="bg-[#0B1221] p-6 rounded-xl border border-gray-800">
-
-      {/* HEADER */}
-      <h3 className="text-white font-semibold mb-4">
-        Neraca (Balance Sheet)
+    <div>
+      <h3 className="font-semibold mb-3">
+        Balance Sheet
       </h3>
 
-      {/* CHART */}
-      <div className="h-[300px]">
+      <div className="h-[340px]">
         <ResponsiveContainer>
+          <ComposedChart data={json.chart}>
+            <CartesianGrid stroke="#1e293b" />
 
-          <BarChart data={data}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="#1e293b"
+            <XAxis
+              dataKey="date"
+              tickFormatter={formatDate}
+              tick={{ fill: "#fff" }}
             />
 
-            <XAxis dataKey="date" />
-
             <YAxis
-              tickFormatter={(v) => formatByUnit(v)}
+              yAxisId="left"
+              tickFormatter={formatNumber}
             />
 
             <YAxis
               yAxisId="right"
               orientation="right"
-              domain={[-1, 2]}
-              tickFormatter={(v) => v}
             />
 
             <Tooltip
-              formatter={(v) => formatByUnit(v)}
+              formatter={(v, k) =>
+                k === "debt_equity_ratio"
+                  ? v.toFixed(2)
+                  : formatNumber(v)
+              }
+              labelFormatter={formatDate}
             />
 
             <Legend />
 
-            {/* TOTAL ASSETS */}
             <Bar
+              yAxisId="left"
               dataKey="total_assets"
-              fill="#7c3aed"
+              fill="#6D28D9"
               name="Total Assets"
             />
 
-            {/* TOTAL LIABILITIES */}
             <Bar
+              yAxisId="left"
               dataKey="total_liabilities"
-              fill="#3b82f6"
+              fill="#3B82F6"
               name="Total Liabilities"
             />
 
-            {/* DEBT EQUITY RATIO */}
             <Line
               yAxisId="right"
               type="monotone"
-              dataKey="de_ratio"
-              stroke="#10b981"
+              dataKey="debt_equity_ratio"
+              stroke="#5EEAD4"
               strokeWidth={3}
               dot={{ r: 5 }}
-              name="Debt Equity Ratio"
+              name="DER"
             />
 
-          </BarChart>
-
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 
+      {/* SCORE */}
+      <div className="mt-4 p-4 bg-gray-800/50 rounded">
+        <span className={`
+          inline-block px-3 py-1 rounded-full
+          text-sm font-bold
+          ${scoreColor(json.score.status)}
+        `}>
+          Skor {json.score.score} - {json.score.status}
+        </span>
+
+        <ul className="list-disc ml-5 mt-3 text-sm">
+          {json.score.notes.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };
 
-export default BalanceChart;
+export default memo(BalanceChart);

@@ -1,253 +1,250 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, XAxis, YAxis,
+  CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend,
   BarChart, Bar
 } from 'recharts';
-import { format } from 'date-fns';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { formatNumber } from "./utils";
 
-const CACHE = {};
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
-const normalizeTicker = (s) => {
-  if (!s) return "";
-  s = s.toUpperCase();
-  if (s.length === 4 && !s.endsWith(".JK")) return `${s}.JK`;
-  return s;
-};
-
-// ===== SAFE DATE FORMAT =====
-const safeFormatDate = (d, fmt = "dd MMM yyyy") => {
+/* SAFE DATE FORMAT */
+const safeDate = (d, type = "axis") => {
   try {
-    if (!d) return "-";
-    return format(new Date(d), fmt);
+    const date = new Date(d);
+    if (isNaN(date)) return d;
+
+    if (type === "tooltip") {
+      return date.toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric"
+      });
+    }
+
+    return date.toLocaleDateString("id-ID", {
+      month: "short",
+      year: "numeric"
+    });
   } catch {
     return d;
   }
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload?.length) return null;
-  const d = payload[0].payload;
-
-  return (
-    <div className="bg-[#0B1221] border border-gray-700 p-3 rounded-lg shadow-xl text-sm">
-      <p className="text-gray-300 font-semibold mb-1">
-        {safeFormatDate(label)}
-      </p>
-
-      <p className="text-blue-400">EMA 20 : {d.ema20?.toFixed(2) ?? "-"}</p>
-      <p className="text-purple-400">EMA 50 : {d.ema50?.toFixed(2) ?? "-"}</p>
-      <p className="text-emerald-400">Price : {d.price?.toFixed(2) ?? "-"}</p>
-
-      <hr className="my-2 border-gray-700" />
-
-      <p>Open : {d.open ?? "-"}</p>
-      <p>High : {d.high ?? "-"}</p>
-      <p>Low : {d.low ?? "-"}</p>
-      <p>Close : {d.close ?? d.price ?? "-"}</p>
-
-      <p className="mt-1 text-gray-400">
-        Volume : {d.volume?.toLocaleString() ?? "-"}
-      </p>
-    </div>
-  );
-};
-
 const StockChart = ({ symbol }) => {
-  const [chartData, setChartData] = useState([]);
-  const [meta, setMeta] = useState({
-    syariah: false,
-    suspend: false,
-    ticker: ""
-  });
-
+  const [json, setJson] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!symbol) return;
+    const t = symbol.length === 4 ? symbol + ".JK" : symbol;
 
-    const controller = new AbortController();
-    const ticker = normalizeTicker(symbol);
-
-    const fetchData = async () => {
+    const load = async () => {
       try {
+        setLoading(true);
         setError(null);
 
-        if (CACHE[ticker]) {
-          const cached = CACHE[ticker];
-          setChartData(cached.data);
-          setMeta(cached.meta);
-          return;
-        }
-
-        setLoading(true);
-
         const res = await fetch(
-          `${API_BASE}/api/chart/${ticker}`,
-          { signal: controller.signal }
+          `${API_BASE}/api/chart/${t}?limit=120`
         );
-
         if (!res.ok) throw new Error("API Error");
 
-        const json = await res.json();
-
-        const metaInfo = {
-          ticker: json.ticker,
-          syariah: json.syariah,
-          suspend: json.suspend
-        };
-
-        CACHE[ticker] = {
-          data: json.data,
-          meta: metaInfo
-        };
-
-        setChartData(json.data);
-        setMeta(metaInfo);
-
-      } catch (err) {
-        if (err.name !== "AbortError")
-          setError(err.message);
+        setJson(await res.json());
+      } catch (e) {
+        setError(e.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-    return () => controller.abort();
+    load();
   }, [symbol]);
 
-  const last = chartData.at(-1);
-  const first = chartData[0];
-
-  const pct = first
-    ? ((last?.price - first?.price) / first?.price) * 100
-    : 0;
-
-  const isUp = pct >= 0;
-
   if (loading)
-    return (
-      <div className="h-[420px] flex items-center justify-center text-gray-400">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
+    return <Loader2 className="animate-spin mx-auto mt-10" />;
 
   if (error)
     return (
-      <div className="h-[420px] flex items-center justify-center text-red-400">
-        <AlertCircle className="mr-2" /> {error}
-      </div>
+      <p className="text-red-400 text-center mt-10">
+        {error}
+      </p>
     );
 
+  if (!json) return null;
+
+  const data = json.data || [];
+  if (!data.length) return null;
+
+  const first = data[0];
+  const last = data[data.length - 1];
+
+  let pct = 0;
+  if (first?.price && last?.price)
+    pct = ((last.price - first.price) / first.price) * 100;
+
+  const isUp = pct >= 0;
+
   return (
-    <div className="bg-[#0B1221] p-6 rounded-xl border border-gray-800">
+    <div>
 
       {/* HEADER */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-white font-semibold">
-          {meta.ticker || normalizeTicker(symbol)}
+      <div className="flex items-center gap-3 mb-2">
+        <h3 className="font-semibold text-lg">
+          {json.ticker}
         </h3>
 
-        <div className="flex gap-2">
-          {/* SYARIAH BADGE */}
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold
-            ${meta.syariah
-              ? "bg-emerald-600/20 text-emerald-400"
-              : "bg-gray-600/20 text-gray-300"
-            }`}
-          >
-            {meta.syariah ? "SYARIAH" : "NON SYARIAH"}
-          </span>
-
-          {/* SUSPEND BADGE */}
-          {meta.suspend && (
-            <span className="px-3 py-1 rounded-full text-xs font-semibold
-              bg-red-600/20 text-red-400">
-              SUSPEND
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* PRICE */}
-      <div className="flex items-center gap-3 mt-3">
-        <p className="text-3xl font-bold">
-          Rp {last?.price?.toLocaleString("id-ID") ?? "-"}
-        </p>
-
-        {!meta.suspend && (
-          <span
-            className={`px-3 py-1 rounded-full text-sm
-            ${isUp
-              ? "bg-emerald-600/20 text-emerald-400"
-              : "bg-red-600/20 text-red-400"
-            }`}
-          >
-            {isUp ? "+" : ""}
-            {pct.toFixed(2)}%
+        {json.syariah && (
+          <span className="
+            px-2 py-0.5 text-xs
+            bg-emerald-500/20 text-emerald-400
+            rounded-full font-semibold">
+            Syariah
           </span>
         )}
       </div>
 
-      <p className="text-gray-500 text-sm mt-1">
-        {safeFormatDate(first?.date)}
-        {" "} - {" "}
-        {safeFormatDate(last?.date)}
+      <p className="text-3xl font-bold">
+        Rp {last?.price?.toLocaleString("id-ID")}
       </p>
 
-      {/* SUSPEND MESSAGE */}
-      {meta.suspend && (
-        <div className="mt-4 bg-red-900/20 border border-red-700 text-red-400 p-3 rounded-lg text-sm">
-          ⚠ Saham ini sedang SUSPEND / tidak aktif diperdagangkan
-        </div>
-      )}
+      {/* PERSENTASE */}
+      <span className={`
+        inline-flex items-center
+        px-3 py-1 mt-2 text-sm font-semibold
+        rounded-full
+        ${isUp
+          ? "bg-emerald-500/20 text-emerald-400"
+          : "bg-red-500/20 text-red-400"}
+      `}>
+        {isUp ? "▲" : "▼"} {pct.toFixed(2)}%
+      </span>
 
-      {/* PRICE CHART */}
-      {!meta.suspend && (
-        <>
-          <div className="h-[300px] mt-4">
-            <ResponsiveContainer>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+      {/* ================= PRICE ================= */}
+      <div className="h-[280px] mt-4">
+        <ResponsiveContainer>
+          <LineChart data={data}>
+            <CartesianGrid stroke="#1e293b" />
 
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(d) =>
-                    safeFormatDate(d, "dd MMM")
-                  }
-                />
+            {/* AXIS TANGGAL PUTIH */}
+            <XAxis
+              dataKey="date"
+              tickFormatter={(v) => safeDate(v, "axis")}
+              tick={{ fill: "#fff", fontWeight: 600 }}
+            />
 
-                <YAxis />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend />
+            <YAxis />
 
-                <Line dataKey="ema20" stroke="#3b82f6" dot={false} />
-                <Line dataKey="ema50" stroke="#a855f7" dot={false} />
-                <Line dataKey="price" stroke="#10b981" dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+            {/* TOOLTIP PRICE */}
+<Tooltip
+  content={({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
 
-          {/* VOLUME */}
-          <div className="h-[120px] mt-6">
-            <ResponsiveContainer>
-              <BarChart data={chartData}>
-                <XAxis dataKey="date" hide />
-                <YAxis hide />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="volume" fill="#3b82f6" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </>
-      )}
+    const d = payload[0].payload;
+
+    return (
+      <div className="bg-white text-black p-3 rounded shadow text-sm">
+        <p className="font-semibold mb-1">
+          {safeDate(label, "tooltip")}
+        </p>
+
+        {/* OHLC */}
+        <p>Open : {d.open}</p>
+        <p>High : {d.high}</p>
+        <p>Low : {d.low}</p>
+        <p>Close : {d.close}</p>
+
+        <hr className="my-1" />
+
+        {/* EMA */}
+        {payload.map((p, i) => (
+          <p key={i} style={{ color: p.color }}>
+            {p.name} : {p.value}
+          </p>
+        ))}
+      </div>
+    );
+  }}
+/>
+
+            <Legend />
+
+            <Line
+              dataKey="ema20"
+              stroke="#3b82f6"
+              dot={false}
+              name="EMA 20"
+            />
+
+            <Line
+              dataKey="ema50"
+              stroke="#a855f7"
+              dot={false}
+              name="EMA 50"
+            />
+
+            <Line
+              dataKey="price"
+              stroke="#10b981"
+              dot={false}
+              name="Price"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ================= VOLUME ================= */}
+      <div className="h-[120px] mt-4">
+        <ResponsiveContainer>
+          <BarChart data={data}>
+            <CartesianGrid stroke="#1e293b" />
+
+            <XAxis
+              dataKey="date"
+              tickFormatter={(v) => safeDate(v, "axis")}
+              tick={{ fill: "#fff", fontWeight: 600 }}
+            />
+
+            <YAxis
+              tickFormatter={formatNumber}
+            />
+
+            {/* TOOLTIP VOLUME */}
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+
+                return (
+                  <div className="bg-white text-black p-3 rounded shadow text-sm">
+                    <p className="font-semibold mb-1">
+                      {safeDate(label, "tooltip")}
+                    </p>
+
+                    <p>
+                      Volume :
+                      {" "}
+                      {formatNumber(payload[0].value)}
+                    </p>
+                  </div>
+                );
+              }}
+            />
+
+            <Legend />
+
+            <Bar
+              dataKey="volume"
+              fill="#3b82f6"
+              name="Volume"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
 
     </div>
   );
 };
 
-export default StockChart;
+export default memo(StockChart);

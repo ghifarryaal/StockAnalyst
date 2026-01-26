@@ -5,7 +5,11 @@ import {
   Tooltip, Legend, CartesianGrid
 } from "recharts";
 import { Loader2 } from "lucide-react";
-import { formatNumber, formatDate, scoreColor } from "./utils";
+import {
+  formatNumber,
+  formatQuarter,
+  scoreColor
+} from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
@@ -37,7 +41,7 @@ const BalanceChart = ({ symbol }) => {
 
             <XAxis
               dataKey="date"
-              tickFormatter={formatDate}
+              tickFormatter={formatQuarter}
               tick={{ fill: "#fff" }}
             />
 
@@ -52,12 +56,27 @@ const BalanceChart = ({ symbol }) => {
             />
 
             <Tooltip
-              formatter={(v, k) =>
-                k === "debt_equity_ratio"
-                  ? v.toFixed(2)
-                  : formatNumber(v)
-              }
-              labelFormatter={formatDate}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+
+                return (
+                  <div className="bg-white text-black p-3 rounded shadow text-sm">
+                    <p className="font-semibold mb-1 text-black">
+                      {formatQuarter(label)}
+                    </p>
+
+                    {payload.map((p, i) => (
+                      <p key={i} style={{ color: p.color }}>
+                        {p.name} :
+                        {" "}
+                        {p.dataKey === "debt_equity_ratio"
+                          ? p.value.toFixed(2)
+                          : formatNumber(p.value)}
+                      </p>
+                    ))}
+                  </div>
+                );
+              }}
             />
 
             <Legend />
@@ -85,7 +104,6 @@ const BalanceChart = ({ symbol }) => {
               dot={{ r: 5 }}
               name="DER"
             />
-
           </ComposedChart>
         </ResponsiveContainer>
       </div>

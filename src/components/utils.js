@@ -31,3 +31,46 @@ export const scoreColor = (status = "") => {
   return "text-gray-400 bg-gray-500/20";
 };
 
+export const formatQuarter = (d) => {
+  try {
+    const date = new Date(d);
+    const q = Math.floor(date.getMonth() / 3) + 1;
+    return `Q${q} ${date.getFullYear()}`;
+  } catch {
+    return d;
+  }
+};
+
+export const formatMarketCap = (n) => {
+  if (!n) return "-";
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + " T";
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + " B";
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + " Jt";
+  return n.toLocaleString("id-ID");
+};
+
+export const classifyMarketCap = (n) => {
+  if (!n) return null;
+
+  if (n >= 10e12) {
+    return {
+      label: "BIG CAP",
+      desc: "Blue Chip",
+      color: "bg-emerald-500/20 text-emerald-400"
+    };
+  }
+
+  if (n >= 500e9) {
+    return {
+      label: "MID CAP",
+      desc: "Second Liner",
+      color: "bg-yellow-500/20 text-yellow-400"
+    };
+  }
+
+  return {
+    label: "SMALL CAP",
+    desc: "Third Liner",
+    color: "bg-red-500/20 text-red-400"
+  };
+};

@@ -5,7 +5,11 @@ import {
   Tooltip, Legend, CartesianGrid
 } from "recharts";
 import { Loader2 } from "lucide-react";
-import { formatNumber, formatDate, scoreColor } from "./utils";
+import {
+  formatNumber,
+  formatQuarter,
+  scoreColor
+} from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
@@ -37,7 +41,7 @@ const IncomeChart = ({ symbol }) => {
 
             <XAxis
               dataKey="date"
-              tickFormatter={formatDate}
+              tickFormatter={formatQuarter}
               tick={{ fill: "#fff" }}
             />
 
@@ -52,13 +56,30 @@ const IncomeChart = ({ symbol }) => {
               tickFormatter={(v) => v + " %"}
             />
 
+            {/* TOOLTIP QUARTER */}
             <Tooltip
-              formatter={(v, k) =>
-                k === "net_margin"
-                  ? v + " %"
-                  : formatNumber(v)
-              }
-              labelFormatter={formatDate}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+
+                return (
+                  <div className="bg-white text-black p-3 rounded shadow text-sm">
+                    {/* HITAM */}
+                    <p className="font-semibold mb-1 text-black">
+                      {formatQuarter(label)}
+                    </p>
+
+                    {payload.map((p, i) => (
+                      <p key={i} style={{ color: p.color }}>
+                        {p.name} :
+                        {" "}
+                        {p.dataKey === "net_margin"
+                          ? p.value + " %"
+                          : formatNumber(p.value)}
+                      </p>
+                    ))}
+                  </div>
+                );
+              }}
             />
 
             <Legend />
@@ -84,9 +105,8 @@ const IncomeChart = ({ symbol }) => {
               stroke="#5EEAD4"
               strokeWidth={3}
               dot={{ r: 5 }}
-              name="Net Margin (%)"
+              name="Net Margin"
             />
-
           </ComposedChart>
         </ResponsiveContainer>
       </div>

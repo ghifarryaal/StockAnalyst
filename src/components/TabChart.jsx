@@ -4,7 +4,7 @@ import IncomeChart from "./IncomeChart";
 import BalanceChart from "./BalanceChart";
 import CashflowChart from "./CashflowChart";
 
-export default function TabChart({ symbol }) {
+export default function TabChart({ symbol, onError }) {
   const [tab, setTab] = useState("price");
 
   const tabs = [
@@ -23,7 +23,7 @@ export default function TabChart({ symbol }) {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 py-3 text-sm font-semibold
+            className={`flex-1 py-3 text-sm font-semibold transition
               ${tab === t.key
                 ? "text-blue-400 border-b-2 border-blue-500"
                 : "text-gray-400 hover:text-gray-200"
@@ -35,22 +35,38 @@ export default function TabChart({ symbol }) {
       </div>
 
       {/* CONTENT (KEEP MOUNTED) */}
-      <div className="p-6 min-h-[400px]">
+      <div className="p-6 min-h-[420px]">
 
+        {/* PRICE */}
         <div className={tab === "price" ? "block" : "hidden"}>
-          <StockChart symbol={symbol} />
+          <StockChart
+            symbol={symbol}
+            onError={onError}
+          />
         </div>
 
+        {/* INCOME */}
         <div className={tab === "income" ? "block" : "hidden"}>
-          <IncomeChart symbol={symbol} />
+          <IncomeChart
+            symbol={symbol}
+            onError={onError}
+          />
         </div>
 
+        {/* BALANCE */}
         <div className={tab === "balance" ? "block" : "hidden"}>
-          <BalanceChart symbol={symbol} />
+          <BalanceChart
+            symbol={symbol}
+            onError={onError}
+          />
         </div>
 
+        {/* CASHFLOW */}
         <div className={tab === "cashflow" ? "block" : "hidden"}>
-          <CashflowChart symbol={symbol} />
+          <CashflowChart
+            symbol={symbol}
+            onError={onError}
+          />
         </div>
 
       </div>

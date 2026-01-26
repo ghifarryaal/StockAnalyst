@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Loader2, StopCircle } from 'lucide-react';
+import { Send, Sparkles, Loader2, StopCircle, Newspaper } from 'lucide-react';
 import ChatMessage from './components/ChatMessage';
 import TabChart from './components/TabChart';
+import NewsSidebar from './components/NewsSidebar';
 
 function App() {
 
-  const N8N_WEBHOOK_URL =
-    "https://tutorial-n8n.indonesiastockanalyst.my.id/webhook-test/analisa-saham";
+  const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([
@@ -19,6 +19,8 @@ function App() {
   ]);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [currentTicker, setCurrentTicker] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const abortRef = useRef(null);
@@ -41,7 +43,9 @@ function App() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const ticker = normalizeTicker(input.trim());
+    const tickerInput = input.trim().toUpperCase();
+    const ticker = normalizeTicker(tickerInput); // dengan .JK untuk analisis
+    const tickerForNews = tickerInput.replace('.JK', ''); // tanpa .JK untuk berita
 
     abortRef.current?.abort();
     const controller = new AbortController();
@@ -52,12 +56,15 @@ function App() {
       { role: 'user', content: ticker },
       {
         role: 'assistant',
-        content: "📊 Memuat grafik...",
+        content: "📊 Menampilkan grafik...",
         isLoading: true,
+        aiError: false,
+        chartError: false,
         ticker
       }
     ]);
 
+    setCurrentTicker(tickerForNews); // simpan tanpa .JK untuk berita
     setInput('');
     setIsLoading(true);
 
@@ -69,32 +76,28 @@ function App() {
         signal: controller.signal
       });
 
+      if (!res.ok) throw new Error("n8n error");
+
       const json = await res.json();
 
       setMessages(prev => {
         const m = [...prev];
         const last = m[m.length - 1];
 
-        last.content =
-          json.output ||
-          "Maaf, analisis tidak tersedia.";
-
+        last.content = json.output || "";
         last.isLoading = false;
+        last.aiError = false;
         return m;
       });
 
-    } catch (err) {
-      if (err.name === "AbortError") return;
-
+    } catch {
       setMessages(prev => {
         const m = [...prev];
         const last = m[m.length - 1];
 
-        last.content =
-          "❌ Gagal mengambil analisis.\n" +
-          "Coba ulang kembali.";
-
+        last.content = ""; // JANGAN tampilkan error dulu
         last.isLoading = false;
+        last.aiError = true;
         return m;
       });
 
@@ -109,12 +112,26 @@ function App() {
       {/* NAVBAR */}
       <header className="fixed top-0 w-full bg-[#0f1117]/80 backdrop-blur-md
         border-b border-gray-800 z-50">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-2">
-          <Sparkles className="text-blue-500 w-5 h-5" />
-          <h1 className="font-bold text-lg">
-            StockAnalyst
-            <span className="text-blue-500"> by Ghifarryaal</span>
-          </h1>
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="text-blue-500 w-5 h-5" />
+            <h1 className="font-bold text-lg">
+              StockAnalyst
+              <span className="text-blue-500"> by Ghifarryaal</span>
+            </h1>
+          </div>
+          
+          {/* BUTTON NEWS */}
+          {currentTicker && (
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 
+                rounded-lg transition-colors text-sm font-medium"
+            >
+              <Newspaper className="w-4 h-4" />
+              <span className="hidden sm:inline">Berita</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -123,18 +140,32 @@ function App() {
 
         {messages.map((msg, i) => (
           <div key={i}>
-            {/* CHAT MESSAGE DULU */}
+
             <ChatMessage
               role={msg.role}
-              content={msg.content}
+              content={
+                msg.aiError && msg.chartError
+                  ? "⚠️ Data tidak tersedia"
+                  : msg.content
+              }
             />
 
-            {/* CHART DI BAWAH MESSAGE */}
-            {msg.role === 'assistant' && msg.ticker && !msg.isLoading && (
-              <div className="max-w-3xl mx-auto px-4 mt-6 mb-8 space-y-6">
-                <TabChart symbol={msg.ticker} key={`chart-${msg.ticker}-${i}`} />
+            {/* CHART */}
+            {msg.role === "assistant" && msg.ticker && (
+              <div className="max-w-3xl mx-auto px-4 mt-4 mb-6">
+                <TabChart
+                  symbol={msg.ticker}
+                  onError={() => {
+                    setMessages(prev => {
+                      const m = [...prev];
+                      m[i].chartError = true;
+                      return m;
+                    });
+                  }}
+                />
               </div>
             )}
+
           </div>
         ))}
 
@@ -178,6 +209,13 @@ function App() {
           </form>
         </div>
       </footer>
+
+      {/* NEWS SIDEBAR */}
+      <NewsSidebar 
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        ticker={currentTicker}
+      />
     </div>
   );
 }

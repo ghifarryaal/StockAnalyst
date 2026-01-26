@@ -10,7 +10,44 @@ import { formatNumber } from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
-/* SAFE DATE FORMAT */
+/* ================= MARKET CAP ================= */
+
+const formatMarketCap = (n) => {
+  if (!n) return "-";
+  if (n >= 1e12) return (n / 1e12).toFixed(2) + " T";
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + " B";
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + " Jt";
+  return n.toLocaleString("id-ID");
+};
+
+const classifyMarketCap = (n) => {
+  if (!n) return null;
+
+  if (n >= 10e12) {
+    return {
+      label: "BIG CAP",
+      desc: "Blue Chip",
+      color: "bg-emerald-500/20 text-emerald-400"
+    };
+  }
+
+  if (n >= 500e9) {
+    return {
+      label: "MID CAP",
+      desc: "Second Liner",
+      color: "bg-yellow-500/20 text-yellow-400"
+    };
+  }
+
+  return {
+    label: "SMALL CAP",
+    desc: "Third Liner",
+    color: "bg-red-500/20 text-red-400"
+  };
+};
+
+/* ================= DATE ================= */
+
 const safeDate = (d, type = "axis") => {
   try {
     const date = new Date(d);
@@ -32,6 +69,8 @@ const safeDate = (d, type = "axis") => {
     return d;
   }
 };
+
+/* ================= COMPONENT ================= */
 
 const StockChart = ({ symbol }) => {
   const [json, setJson] = useState(null);
@@ -87,23 +126,43 @@ const StockChart = ({ symbol }) => {
 
   const isUp = pct >= 0;
 
+  const mc = classifyMarketCap(json.market_cap);
+
   return (
     <div>
 
       {/* HEADER */}
-      <div className="flex items-center gap-3 mb-2">
+      <div className="mb-3">
         <h3 className="font-semibold text-lg">
           {json.ticker}
         </h3>
 
-        {json.syariah && (
-          <span className="
-            px-2 py-0.5 text-xs
-            bg-emerald-500/20 text-emerald-400
-            rounded-full font-semibold">
-            Syariah
-          </span>
-        )}
+        <div className="flex flex-wrap gap-2 mt-2">
+
+          {/* SYARIAH */}
+          {json.syariah && (
+            <span className="
+              px-3 py-1 text-xs rounded-full
+              bg-emerald-500/20 text-emerald-400
+              font-semibold">
+              SYARIAH
+            </span>
+          )}
+
+          {/* MARKET CAP */}
+          {mc && (
+            <span className={`
+              px-3 py-1 text-xs rounded-full
+              font-semibold
+              ${mc.color}
+            `}>
+              {mc.label} ({mc.desc})
+              {" "}•{" "}
+              {formatMarketCap(json.market_cap)}
+            </span>
+          )}
+
+        </div>
       </div>
 
       <p className="text-3xl font-bold">
@@ -128,7 +187,6 @@ const StockChart = ({ symbol }) => {
           <LineChart data={data}>
             <CartesianGrid stroke="#1e293b" />
 
-            {/* AXIS TANGGAL PUTIH */}
             <XAxis
               dataKey="date"
               tickFormatter={(v) => safeDate(v, "axis")}
@@ -137,37 +195,34 @@ const StockChart = ({ symbol }) => {
 
             <YAxis />
 
-            {/* TOOLTIP PRICE */}
-<Tooltip
-  content={({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
 
-    const d = payload[0].payload;
+                const d = payload[0].payload;
 
-    return (
-      <div className="bg-white text-black p-3 rounded shadow text-sm">
-        <p className="font-semibold mb-1">
-          {safeDate(label, "tooltip")}
-        </p>
+                return (
+                  <div className="bg-white text-black p-3 rounded shadow text-sm">
+                    <p className="font-semibold mb-1">
+                      {safeDate(label, "tooltip")}
+                    </p>
 
-        {/* OHLC */}
-        <p>Open : {d.open}</p>
-        <p>High : {d.high}</p>
-        <p>Low : {d.low}</p>
-        <p>Close : {d.close}</p>
+                    <p>Open : {d.open}</p>
+                    <p>High : {d.high}</p>
+                    <p>Low : {d.low}</p>
+                    <p>Close : {d.close}</p>
 
-        <hr className="my-1" />
+                    <hr className="my-1" />
 
-        {/* EMA */}
-        {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color }}>
-            {p.name} : {p.value}
-          </p>
-        ))}
-      </div>
-    );
-  }}
-/>
+                    {payload.map((p, i) => (
+                      <p key={i} style={{ color: p.color }}>
+                        {p.name} : {p.value}
+                      </p>
+                    ))}
+                  </div>
+                );
+              }}
+            />
 
             <Legend />
 
@@ -207,11 +262,8 @@ const StockChart = ({ symbol }) => {
               tick={{ fill: "#fff", fontWeight: 600 }}
             />
 
-            <YAxis
-              tickFormatter={formatNumber}
-            />
+            <YAxis tickFormatter={formatNumber} />
 
-            {/* TOOLTIP VOLUME */}
             <Tooltip
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;

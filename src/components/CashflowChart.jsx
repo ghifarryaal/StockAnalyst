@@ -5,7 +5,11 @@ import {
   Tooltip, Legend, CartesianGrid
 } from "recharts";
 import { Loader2 } from "lucide-react";
-import { formatNumber, formatDate, scoreColor } from "./utils";
+import {
+  formatNumber,
+  formatQuarter,
+  scoreColor
+} from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
 
@@ -37,15 +41,32 @@ const CashflowChart = ({ symbol }) => {
 
             <XAxis
               dataKey="date"
-              tickFormatter={formatDate}
+              tickFormatter={formatQuarter}
               tick={{ fill: "#fff" }}
             />
 
             <YAxis tickFormatter={formatNumber} />
 
             <Tooltip
-              formatter={(v) => formatNumber(v)}
-              labelFormatter={formatDate}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+
+                return (
+                  <div className="bg-white text-black p-3 rounded shadow text-sm">
+                    <p className="font-semibold mb-1 text-black">
+                      {formatQuarter(label)}
+                    </p>
+
+                    {payload.map((p, i) => (
+                      <p key={i} style={{ color: p.color }}>
+                        {p.name} :
+                        {" "}
+                        {formatNumber(p.value)}
+                      </p>
+                    ))}
+                  </div>
+                );
+              }}
             />
 
             <Legend />
@@ -67,7 +88,6 @@ const CashflowChart = ({ symbol }) => {
               fill="#EF4444"
               name="Financing"
             />
-
           </BarChart>
         </ResponsiveContainer>
       </div>

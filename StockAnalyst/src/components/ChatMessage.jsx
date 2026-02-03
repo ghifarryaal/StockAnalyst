@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Bot, User, Sparkles } from 'lucide-react';
@@ -10,45 +10,11 @@ const ChatMessage = ({ role, content }) => {
     .replace(/undefined/gi, '')
     .replace(/null/gi, '')
     .trim();
-  const [displayedContent, setDisplayedContent] = useState('');
-  const [isTyping, setIsTyping] = useState(true);
-
   // Final safeguard to remove any undefined text
-  const finalContent = (displayedContent || '')
+  const finalContent = normalizedContent
     .replace(/undefined/gi, '')
     .replace(/null/gi, '')
     .trim();
-
-  // Typing animation effect for AI messages
-  useEffect(() => {
-    if (!isAi) {
-      setDisplayedContent(normalizedContent);
-      setIsTyping(false);
-      return;
-    }
-
-    if (!normalizedContent || normalizedContent.includes('📊 Menganalisis') || normalizedContent.includes('⚠️') || normalizedContent.includes('❌')) {
-      setDisplayedContent(normalizedContent);
-      setIsTyping(false);
-      return;
-    }
-
-    setDisplayedContent('');
-    setIsTyping(true);
-    let index = 0;
-
-    const interval = setInterval(() => {
-      if (index < normalizedContent.length) {
-        setDisplayedContent(prev => prev + normalizedContent[index]);
-        index++;
-      } else {
-        setIsTyping(false);
-        clearInterval(interval);
-      }
-    }, 10);
-
-    return () => clearInterval(interval);
-  }, [normalizedContent, isAi]);
 
   return (
     <div className={`w-full py-8 ${isAi ? 'bg-transparent' : 'bg-gray-800/20 backdrop-blur-sm'} animate-fadeIn`}>
@@ -67,9 +33,7 @@ const ChatMessage = ({ role, content }) => {
             {isAi ? (
               <div className="relative">
                 <Bot size={20} />
-                {isTyping && (
-                  <Sparkles size={10} className="absolute -top-1 -right-1 animate-spin" />
-                )}
+                {/* Typing indicator removed */}
               </div>
             ) : (
               <User size={20} />
@@ -88,9 +52,7 @@ const ChatMessage = ({ role, content }) => {
                 AI
               </span>
             )}
-            {isTyping && isAi && (
-              <span className="text-xs text-gray-500 animate-pulse">typing...</span>
-            )}
+            {/* Status removed */}
           </div>
 
           {/* CARD CONTAINER UNTUK AI */}
@@ -271,9 +233,7 @@ const ChatMessage = ({ role, content }) => {
               >
                 {finalContent}
               </ReactMarkdown>
-              {isTyping && isAi && (
-                <span className="inline-block w-1.5 h-4 bg-blue-500 animate-pulse ml-1"></span>
-              )}
+              {/* Cursor removed */}
 
             </div>
           </div>

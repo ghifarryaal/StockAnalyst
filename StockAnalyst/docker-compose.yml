@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  stock-web:
+    container_name: stock-app
+    build: .
+    restart: always
+    ports:
+      - "127.0.0.1:3000:80"
+    # This maps host port 3000 (localhost only) to container port 80.
+    # Nginx on the host will proxy to 127.0.0.1:3000.

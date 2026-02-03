@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import yfinance as yf
 import time
+import httpx
 
 app = FastAPI()
 
@@ -25,6 +26,82 @@ def root():
         "status": "API running",
         "endpoints": ["/api/stocks/{ticker}"]
     }
+
+
+# ================ MOCK FOR FRONTEND DEV =================
+# Simple mock so the frontend can render while n8n is down.
+@app.post("/mock/analisa-saham")
+async def mock_analisa_saham(body: dict):
+    ticker = body.get("prompt", "BBRI")
+    sample_text = (
+        f"## Analisis {ticker}\n"
+        "- Trend: Bullish jangka pendek.\n"
+        "- Support: 5,000 — Resistance: 5,300.\n"
+        "- Catatan: Volume meningkat, waspadai gap down."
+    )
+    return {"output": sample_text}
+
+
+@app.post("/mock/analisis-berita")
+async def mock_analisis_berita(body: dict):
+    ticker = body.get("prompt", "BBRI")
+    now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    news = [
+        {
+            "title": f"{ticker} raih kenaikan laba bersih",
+            "summary": "Manajemen menyebut efisiensi biaya dan pertumbuhan kredit sebagai pendorong utama.",
+            "source": "MockNews",
+            "published_at": now,
+            "url": "https://example.com/mock-1"
+        },
+        {
+            "title": f"Analis menaikkan target harga {ticker}",
+            "summary": "Rekomendasi beli dengan target baru, mempertimbangkan NIM dan kualitas aset yang stabil.",
+            "source": "MockNews",
+            "published_at": now,
+            "url": "https://example.com/mock-2"
+        }
+    ]
+    return {"news": news}
+
+
+# ================ PROXY TO N8N =================
+@app.post("/api/analisa-saham")
+async def proxy_analisa_saham(body: dict):
+    """Relay analysis request to n8n webhook (server-side, no CORS)."""
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            res = await client.post(
+                "https://tutorial-n8n.indonesiastockanalyst.my.id/webhook-test/analisa-saham",
+                json=body
+            )
+            res.raise_for_status()
+            # Try JSON, else text
+            try:
+                return res.json()
+            except:
+                return {"output": res.text}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"N8N error: {str(e)}")
+
+
+@app.post("/api/analisis-berita")
+async def proxy_analisis_berita(body: dict):
+    """Relay news request to n8n webhook (server-side, no CORS)."""
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            res = await client.post(
+                "https://tutorial-n8n.indonesiastockanalyst.my.id/webhook-test/analisis-berita",
+                json=body
+            )
+            res.raise_for_status()
+            # Try JSON, else text
+            try:
+                return res.json()
+            except:
+                return {"news": res.text}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"N8N error: {str(e)}")
 
 # ================= MAIN ENDPOINT =================
 @app.get("/api/stocks/{ticker}")

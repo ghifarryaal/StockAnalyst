@@ -147,6 +147,14 @@ function App() {
           </button>
 
           <button
+            onClick={() => setOpenTopStocks(true)}
+            className="lg:hidden bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-orange-500/50"
+            style={{ boxShadow: '0 0 15px rgba(234, 88, 12, 0.3)' }}
+          >
+            <TrendingUp size={16} /> <span className="hidden sm:inline">Pasar</span>
+          </button>
+
+          <button
             onClick={() => setOpenGlossary(true)}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-green-500/50"
             style={{ boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)' }}

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Sparkles, Newspaper, BookOpen, Building2 } from "lucide-react";
+import { Send, Loader2, Sparkles, Newspaper, BookOpen, Building2, TrendingUp, X } from "lucide-react";
 import ChatMessage from "./components/ChatMessage";
 import TabChart from "./components/TabChart";
 import NewsSidebar from "./components/NewsSidebar";
@@ -25,6 +25,7 @@ function App() {
   const [openNews, setOpenNews] = useState(false);
   const [openGlossary, setOpenGlossary] = useState(false);
   const [openIndustryGuide, setOpenIndustryGuide] = useState(false);
+  const [openTopStocks, setOpenTopStocks] = useState(false);
 
   const endRef = useRef(null);
 
@@ -144,8 +145,9 @@ function App() {
           >
             <Building2 size={16} /> <span className="hidden sm:inline">Industri</span>
           </button>
+
           <button
-            onClick={() => setOpenGlossary(true)}
+            onClick={() => setOpenTopStocks(true)}
             className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-green-500/50"
             style={{ boxShadow: '0 0 15px rgba(16, 185, 129, 0.3)' }}
           >
@@ -255,6 +257,30 @@ function App() {
         isOpen={openNews}
         onClose={() => setOpenNews(false)}
       />
+
+      {/* MOBILE TOP STOCKS MODAL */}
+      {openTopStocks && (
+        <div className="fixed inset-0 z-50 lg:hidden flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setOpenTopStocks(false)} />
+          <div className="bg-[#1a1f2e] w-full max-w-md h-[80vh] rounded-2xl border border-gray-700 shadow-2xl overflow-hidden flex flex-col relative animate-fadeInUp">
+            <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800/50">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                <TrendingUp size={18} className="text-orange-500" />
+                Live Market
+              </h3>
+              <button onClick={() => setOpenTopStocks(false)} className="p-1 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <TopStocks onStockClick={(code) => {
+                handleSubmit({ preventDefault: () => { } }, code);
+                setOpenTopStocks(false);
+              }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* GLOSSARY MODAL */}
       <Glossary

@@ -14,6 +14,7 @@ const TopStocks = ({ onStockClick }) => {
   const [topLosers, setTopLosers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('gainers'); // 'gainers' or 'losers'
 
   // Fetch top movers dari Yahoo Finance API
   const fetchTopMoversFromYahoo = async () => {
@@ -332,49 +333,87 @@ const TopStocks = ({ onStockClick }) => {
     );
   }
 
-  return (
-    <div className="h-full flex flex-row bg-gradient-to-b from-gray-900/50 to-gray-900/30 backdrop-blur-sm border-l border-gray-700/30 overflow-hidden">
-      {/* Top Gainers - Kiri */}
-      <div className="flex-1 overflow-y-auto border-r border-gray-700/30">
-        <div className="sticky top-0 p-3 border-b border-gray-700/30 bg-gradient-to-r from-green-900/20 to-green-900/10 backdrop-blur-md z-10">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg shadow-lg">
-              <TrendingUp className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-xs bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                Top Gainers
-              </h2>
-              <p className="text-[8px] text-gray-500">High Volume</p>
-            </div>
+  const GainersList = () => (
+    <div className="flex-1 overflow-y-auto border-r border-gray-700/30 custom-scrollbar">
+      <div className="sticky top-0 p-3 border-b border-gray-700/30 bg-gradient-to-r from-green-900/20 to-green-900/10 backdrop-blur-md z-10">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg shadow-lg">
+            <TrendingUp className="w-3.5 h-3.5 text-white" />
           </div>
-        </div>
-        <div className="p-2 space-y-1">
-          {topGainers.map((stock, idx) => (
-            <StockItem key={`gainer-${stock.code}-${idx}`} stock={stock} />
-          ))}
+          <div>
+            <h2 className="font-semibold text-xs bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+              Top Gainers
+            </h2>
+            <p className="text-[8px] text-gray-500">High Volume</p>
+          </div>
         </div>
       </div>
+      <div className="p-2 space-y-1">
+        {topGainers.map((stock, idx) => (
+          <StockItem key={`gainer-${stock.code}-${idx}`} stock={stock} />
+        ))}
+      </div>
+    </div>
+  );
 
-      {/* Top Losers - Kanan */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="sticky top-0 p-3 border-b border-gray-700/30 bg-gradient-to-r from-red-900/20 to-red-900/10 backdrop-blur-md z-10">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-red-600 to-pink-600 rounded-lg shadow-lg">
-              <TrendingDown className="w-3.5 h-3.5 text-white" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-xs bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
-                Top Losers
-              </h2>
-              <p className="text-[8px] text-gray-500">High Volume</p>
-            </div>
+  const LosersList = () => (
+    <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div className="sticky top-0 p-3 border-b border-gray-700/30 bg-gradient-to-r from-red-900/20 to-red-900/10 backdrop-blur-md z-10">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-gradient-to-br from-red-600 to-pink-600 rounded-lg shadow-lg">
+            <TrendingDown className="w-3.5 h-3.5 text-white" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-xs bg-gradient-to-r from-red-400 to-pink-400 bg-clip-text text-transparent">
+              Top Losers
+            </h2>
+            <p className="text-[8px] text-gray-500">High Volume</p>
           </div>
         </div>
-        <div className="p-2 space-y-1">
-          {topLosers.map((stock, idx) => (
-            <StockItem key={`loser-${stock.code}-${idx}`} stock={stock} />
-          ))}
+      </div>
+      <div className="p-2 space-y-1">
+        {topLosers.map((stock, idx) => (
+          <StockItem key={`loser-${stock.code}-${idx}`} stock={stock} />
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col lg:flex-row bg-gradient-to-b from-gray-900/50 to-gray-900/30 backdrop-blur-sm border-l border-gray-700/30 overflow-hidden">
+      {/* Mobile Tabs */}
+      <div className="lg:hidden flex border-b border-gray-700/30">
+        <button
+          onClick={() => setActiveTab('gainers')}
+          className={`flex-1 py-3 text-xs font-bold transition-all ${activeTab === 'gainers'
+            ? 'bg-green-500/10 text-green-400 border-b-2 border-green-500'
+            : 'text-gray-400 hover:text-gray-200'
+            }`}
+        >
+          Top Gainers
+        </button>
+        <button
+          onClick={() => setActiveTab('losers')}
+          className={`flex-1 py-3 text-xs font-bold transition-all ${activeTab === 'losers'
+            ? 'bg-red-500/10 text-red-400 border-b-2 border-red-500'
+            : 'text-gray-400 hover:text-gray-200'
+            }`}
+        >
+          Top Losers
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-hidden flex flex-col lg:flex-row">
+        {/* Desktop: Show Both */}
+        <div className="hidden lg:flex flex-1 h-full">
+          <GainersList />
+          <LosersList />
+        </div>
+
+        {/* Mobile: Show Active Tab */}
+        <div className="lg:hidden flex-1 h-full overflow-hidden flex flex-col">
+          {activeTab === 'gainers' ? <GainersList /> : <LosersList />}
         </div>
       </div>
     </div>

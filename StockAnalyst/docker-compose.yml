@@ -3,7 +3,13 @@ version: '3.8'
 services:
   stock-web:
     container_name: stock-app
-    build: .
+    build:
+      context: .
+      args:
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+        - VITE_N8N_WEBHOOK_URL=${VITE_N8N_WEBHOOK_URL}
+        - VITE_N8N_NEWS_URL=${VITE_N8N_NEWS_URL}
     restart: always
     ports:
       - "3000:80"

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Building2, Search, X, TrendingUp, TrendingDown } from 'lucide-react';
 
-const IndustryGuide = ({ isOpen, onClose }) => {
+const IndustryGuide = ({ isOpen, onClose, standalone = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSector, setActiveSector] = useState('all');
 
@@ -382,7 +382,7 @@ const IndustryGuide = ({ isOpen, onClose }) => {
   ];
 
   const filteredIndustries = industryData.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.industry.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.examples.some(ex => ex.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -390,12 +390,13 @@ const IndustryGuide = ({ isOpen, onClose }) => {
     return matchesSearch && matchesSector;
   });
 
-  if (!isOpen) return null;
+  // For standalone mode, don't check isOpen
+  if (!standalone && !isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden border border-slate-700">
-        {/* Header */}
+  const content = (
+    <>
+      {/* Header - only show in modal mode */}
+      {!standalone && (
         <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Building2 className="w-8 h-8 text-white" />
@@ -411,135 +412,152 @@ const IndustryGuide = ({ isOpen, onClose }) => {
             <X className="w-6 h-6 text-white" />
           </button>
         </div>
+      )}
 
-        {/* Search Bar */}
-        <div className="p-4 border-b border-slate-700">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari industri atau kode saham..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            />
-          </div>
+      {/* Search Bar */}
+      <div className="p-4 border-b border-slate-700">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Cari industri atau kode saham..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+          />
         </div>
+      </div>
 
-        {/* Sector Filter */}
-        <div className="p-4 border-b border-slate-700 overflow-x-auto">
-          <div className="flex gap-2">
-            {sectors.map(sec => (
-              <button
-                key={sec.id}
-                onClick={() => setActiveSector(sec.id)}
-                className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
-                  activeSector === sec.id
-                    ? 'bg-cyan-600 text-white shadow-lg'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+      {/* Sector Filter */}
+      <div className="p-4 border-b border-slate-700 overflow-x-auto">
+        <div className="flex gap-2">
+          {sectors.map(sec => (
+            <button
+              key={sec.id}
+              onClick={() => setActiveSector(sec.id)}
+              className={`px-4 py-2 rounded-lg whitespace-nowrap transition-all ${activeSector === sec.id
+                  ? 'bg-cyan-600 text-white shadow-lg'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                 }`}
-              >
-                <span className="mr-2">{sec.icon}</span>
-                {sec.name}
-              </button>
-            ))}
-          </div>
+            >
+              <span className="mr-2">{sec.icon}</span>
+              {sec.name}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Industries List */}
-        <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 280px)' }}>
-          {filteredIndustries.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-400 text-lg">Tidak ada industri yang ditemukan</p>
-              <p className="text-slate-500 text-sm mt-2">Coba kata kunci lain</p>
-            </div>
-          ) : (
-            <div className="grid gap-5">
-              {filteredIndustries.map((item, index) => (
-                <div
-                  key={index}
-                  className={`border rounded-xl p-5 hover:shadow-xl transition-all ${item.color}`}
-                >
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="text-4xl">{item.icon}</span>
-                      <div>
-                        <h3 className="text-xl font-bold">{item.industry}</h3>
-                        <p className="text-sm text-slate-400">{item.sector}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-slate-300 mb-4 leading-relaxed">{item.description}</p>
-
-                  {/* Characteristics */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-slate-400 mb-2">📋 Karakteristik:</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {item.characteristics.map((char, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                          <span className="w-1.5 h-1.5 bg-current rounded-full"></span>
-                          {char}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Key Metrics */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-slate-400 mb-2">📊 Metrik Utama:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {item.keyMetrics.map((metric, i) => (
-                        <span key={i} className="px-3 py-1 bg-slate-800/70 text-slate-300 text-xs rounded-full border border-slate-600">
-                          {metric}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Examples */}
-                  <div className="mb-4">
-                    <h4 className="text-sm font-semibold text-slate-400 mb-2">💼 Contoh Emiten:</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {item.examples.map((example, i) => (
-                        <div key={i} className="bg-slate-900/50 border border-slate-700 rounded-lg p-2 text-sm">
-                          {example}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Risks & Opportunities */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="bg-red-900/20 border-l-4 border-red-500 p-3 rounded">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingDown className="w-4 h-4 text-red-400" />
-                        <h4 className="text-sm font-semibold text-red-400">Risiko</h4>
-                      </div>
-                      <p className="text-xs text-slate-300">{item.risks}</p>
-                    </div>
-                    <div className="bg-green-900/20 border-l-4 border-green-500 p-3 rounded">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="w-4 h-4 text-green-400" />
-                        <h4 className="text-sm font-semibold text-green-400">Peluang</h4>
-                      </div>
-                      <p className="text-xs text-slate-300">{item.opportunities}</p>
+      {/* Industries List */}
+      <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 280px)' }}>
+        {filteredIndustries.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-slate-400 text-lg">Tidak ada industri yang ditemukan</p>
+            <p className="text-slate-500 text-sm mt-2">Coba kata kunci lain</p>
+          </div>
+        ) : (
+          <div className="grid gap-5">
+            {filteredIndustries.map((item, index) => (
+              <div
+                key={index}
+                className={`border rounded-xl p-5 hover:shadow-xl transition-all ${item.color}`}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">{item.icon}</span>
+                    <div>
+                      <h3 className="text-xl font-bold">{item.industry}</h3>
+                      <p className="text-sm text-slate-400">{item.sector}</p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Footer */}
-        <div className="bg-slate-800 p-4 border-t border-slate-700">
-          <p className="text-center text-slate-400 text-sm">
-            🏭 Total {filteredIndustries.length} dari {industryData.length} industri ditampilkan
-          </p>
-        </div>
+                {/* Description */}
+                <p className="text-slate-300 mb-4 leading-relaxed">{item.description}</p>
+
+                {/* Characteristics */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-slate-400 mb-2">📋 Karakteristik:</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {item.characteristics.map((char, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
+                        <span className="w-1.5 h-1.5 bg-current rounded-full"></span>
+                        {char}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-slate-400 mb-2">📊 Metrik Utama:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {item.keyMetrics.map((metric, i) => (
+                      <span key={i} className="px-3 py-1 bg-slate-800/70 text-slate-300 text-xs rounded-full border border-slate-600">
+                        {metric}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Examples */}
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-slate-400 mb-2">💼 Contoh Emiten:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {item.examples.map((example, i) => (
+                      <div key={i} className="bg-slate-900/50 border border-slate-700 rounded-lg p-2 text-sm">
+                        {example}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Risks & Opportunities */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="bg-red-900/20 border-l-4 border-red-500 p-3 rounded">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingDown className="w-4 h-4 text-red-400" />
+                      <h4 className="text-sm font-semibold text-red-400">Risiko</h4>
+                    </div>
+                    <p className="text-xs text-slate-300">{item.risks}</p>
+                  </div>
+                  <div className="bg-green-900/20 border-l-4 border-green-500 p-3 rounded">
+                    <div className="flex items-center gap-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-green-400" />
+                      <h4 className="text-sm font-semibold text-green-400">Peluang</h4>
+                    </div>
+                    <p className="text-xs text-slate-300">{item.opportunities}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="bg-slate-800 p-4 border-t border-slate-700">
+        <p className="text-center text-slate-400 text-sm">
+          🏭 Total {filteredIndustries.length} dari {industryData.length} industri ditampilkan
+        </p>
+      </div>
+    </>
+  );
+
+  // Standalone mode: return content without modal wrapper
+  if (standalone) {
+    return (
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full overflow-hidden border border-slate-700">
+        {content}
+      </div>
+    );
+  }
+
+  // Modal mode: return content with modal wrapper
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden border border-slate-700">
+        {content}
       </div>
     </div>
   );

@@ -24,9 +24,21 @@ export const formatDate = (d) => {
 export const scoreColor = (status = "") => {
   const s = status.toUpperCase();
 
-  if (s.includes("SEHAT")) return "text-emerald-400 bg-emerald-500/20";
-  if (s.includes("WASPADA")) return "text-yellow-400 bg-yellow-500/20";
-  if (s.includes("BURUK")) return "text-red-400 bg-red-500/20";
+  // Sehat = Hijau (Green)
+  if (s.includes("SEHAT") || s.includes("STRONG") || s.includes("GOOD"))
+    return "text-emerald-400 bg-emerald-500/20";
+
+  // Netral = Biru (Blue)
+  if (s.includes("NETRAL") || s.includes("NEUTRAL"))
+    return "text-blue-400 bg-blue-500/20";
+
+  // Hati-hati = Kuning (Yellow)
+  if (s.includes("HATI") || s.includes("FAIR") || s.includes("CAUTION"))
+    return "text-yellow-400 bg-yellow-500/20";
+
+  // Waspada = Merah (Red)
+  if (s.includes("WASPADA") || s.includes("BURUK") || s.includes("WEAK") || s.includes("POOR"))
+    return "text-red-400 bg-red-500/20";
 
   return "text-gray-400 bg-gray-500/20";
 };
@@ -73,4 +85,27 @@ export const classifyMarketCap = (n) => {
     desc: "Third Liner",
     color: "bg-red-500/20 text-red-400"
   };
+};
+
+// Helper function to get score badge color based on status
+export const getScoreBadgeColor = (status = "") => {
+  const s = status.toUpperCase();
+
+  // Sehat = Hijau (Green)
+  if (s.includes("SEHAT") || s.includes("STRONG"))
+    return "bg-gradient-to-r from-emerald-500 to-green-500";
+
+  // Netral/Good = Biru (Blue)
+  if (s.includes("NETRAL") || s.includes("NEUTRAL") || s.includes("GOOD"))
+    return "bg-gradient-to-r from-blue-500 to-cyan-500";
+
+  // Hati-hati = Kuning (Yellow)
+  if (s.includes("HATI") || s.includes("FAIR") || s.includes("CAUTION"))
+    return "bg-gradient-to-r from-yellow-500 to-orange-500";
+
+  // Waspada = Merah (Red)
+  if (s.includes("WASPADA") || s.includes("BURUK") || s.includes("WEAK") || s.includes("POOR"))
+    return "bg-gradient-to-r from-red-500 to-rose-500";
+
+  return "bg-gradient-to-r from-gray-500 to-gray-600";
 };

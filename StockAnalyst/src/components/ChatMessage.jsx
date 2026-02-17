@@ -1,9 +1,11 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, User, Sparkles } from 'lucide-react';
+import { Bot, User, Sparkles, LogIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const ChatMessage = ({ role, content }) => {
+const ChatMessage = ({ role, content, isAuthWarning = false }) => {
+  const navigate = useNavigate();
   const isAi = role === 'assistant';
   const safeContent = content || '';
   const normalizedContent = safeContent
@@ -233,6 +235,21 @@ const ChatMessage = ({ role, content }) => {
               >
                 {finalContent}
               </ReactMarkdown>
+
+              {isAuthWarning && (
+                <div className="mt-6 pt-6 border-t border-gray-700/50">
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-95 group"
+                  >
+                    <LogIn size={18} className="group-hover:translate-x-1 transition-transform" />
+                    <span>Ke Halaman Login</span>
+                  </button>
+                  <p className="text-center text-[11px] text-gray-500 mt-3">
+                    Bebas biaya pendaftaran dan nikmati fitur analisis pintar.
+                  </p>
+                </div>
+              )}
               {/* Cursor removed */}
 
             </div>

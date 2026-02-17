@@ -262,11 +262,12 @@ const TopStocks = ({ onStockClick }) => {
     const [logoError, setLogoError] = React.useState(false);
 
     const handleLogoError = () => {
-      // Try next logo source
+      // Silently try next logo source (errors are expected, fallback to initials)
       if (currentLogoIndex < logo.logoSources.length - 1) {
         setCurrentLogoIndex(currentLogoIndex + 1);
         setLogoError(false);
       } else {
+        // All sources failed, use fallback initials (no error logging needed)
         setLogoError(true);
       }
     };
@@ -285,6 +286,8 @@ const TopStocks = ({ onStockClick }) => {
                 src={logo.logoSources[currentLogoIndex]}
                 alt={stock.code}
                 className="w-full h-full object-contain bg-white p-1"
+                loading="lazy"
+                referrerPolicy="no-referrer"
                 onError={handleLogoError}
               />
             ) : (

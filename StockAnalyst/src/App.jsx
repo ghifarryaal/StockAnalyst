@@ -12,6 +12,7 @@ import { getCachedAnalysis, saveAnalysisToCache, isCacheAvailable } from "./serv
 import { useAuth } from "./contexts/AuthContext";
 import { checkUsageLimit, incrementUsage } from "./services/aiUsageService";
 import Navbar from "./components/Navbar";
+import IndustryGuide from "./components/IndustryGuide";
 
 function App() {
   const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
@@ -30,6 +31,7 @@ function App() {
   const [ticker, setTicker] = useState("");
   const [openNews, setOpenNews] = useState(false);
   const [openTopStocks, setOpenTopStocks] = useState(false);
+  const [openIndustry, setOpenIndustry] = useState(false);
 
   const endRef = useRef(null);
 
@@ -240,12 +242,26 @@ function App() {
       <Navbar />
 
       {/* MOBILE ACTIONS BAR (Sticky below navbar for mobile) */}
-      <div className="lg:hidden flex items-center justify-center gap-2 p-2 px-4 border-b border-gray-700/30 bg-gray-900/50 backdrop-blur-md overflow-x-auto no-scrollbar">
+      <div className="lg:hidden flex items-center justify-start gap-2 p-2 px-4 border-b border-gray-700/30 bg-gray-900/50 backdrop-blur-md overflow-x-auto no-scrollbar">
         <button
           onClick={() => setOpenTopStocks(true)}
           className="whitespace-nowrap bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
         >
           <TrendingUp size={14} /> <span>Pasar</span>
+        </button>
+
+        <button
+          onClick={() => navigate("/education")}
+          className="whitespace-nowrap bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
+        >
+          <GraduationCap size={14} /> <span>Edukasi</span>
+        </button>
+
+        <button
+          onClick={() => setOpenIndustry(true)}
+          className="whitespace-nowrap bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
+        >
+          <Building2 size={14} /> <span>Industri</span>
         </button>
 
         <button
@@ -255,14 +271,12 @@ function App() {
           <BookOpen size={14} /> <span>Glosarium</span>
         </button>
 
-        {ticker && (
-          <button
-            onClick={() => setOpenNews(true)}
-            className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
-          >
-            <Newspaper size={14} /> <span>Berita</span>
-          </button>
-        )}
+        <button
+          onClick={() => setOpenNews(true)}
+          className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 shadow-lg transition-all duration-200"
+        >
+          <Newspaper size={14} /> <span>Berita</span>
+        </button>
       </div>
 
       {/* STOCK TICKER */}
@@ -383,6 +397,12 @@ function App() {
           </div>
         )
       }
+
+      {/* MOBILE INDUSTRY MODAL */}
+      <IndustryGuide
+        isOpen={openIndustry}
+        onClose={() => setOpenIndustry(false)}
+      />
     </div >
   );
 }

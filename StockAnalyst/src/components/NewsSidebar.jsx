@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, Newspaper, Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { X, Newspaper, Loader2, ChevronDown, ChevronUp, Sparkles, Search } from "lucide-react";
 
 const N8N_NEWS_URL = import.meta.env.VITE_N8N_NEWS_URL;
 
@@ -7,7 +7,7 @@ export default function NewsSidebar({
   ticker,
   embedded = false,
   isOpen = false,
-  onClose = () => {}
+  onClose = () => { }
 }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,6 @@ export default function NewsSidebar({
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
-    if (!ticker) return;
     if (!embedded && !isOpen) return;
 
     let cancelled = false;
@@ -67,11 +66,23 @@ export default function NewsSidebar({
       }
     };
 
-    fetchNews();
+    if (ticker) {
+      fetchNews();
+    }
     return () => (cancelled = true);
   }, [ticker, embedded, isOpen]);
 
   const renderContent = () => {
+    if (!ticker) {
+      return (
+        <div className="text-center py-10 bg-blue-500/10 border border-blue-500/20 rounded-xl p-6 backdrop-blur-sm">
+          <Search className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+          <p className="text-blue-200 font-semibold underline decoration-blue-500/30 underline-offset-4">Cari Saham Terlebih Dahulu</p>
+          <p className="text-gray-400 text-sm mt-2">Ketik kode saham di kolom pencarian untuk melihat analisis berita mendalam oleh AI.</p>
+        </div>
+      );
+    }
+
     if (loading) {
       return (
         <div className="flex flex-col items-center justify-center py-10 gap-3">
@@ -135,7 +146,7 @@ export default function NewsSidebar({
               <Newspaper className="w-4 h-4 text-white" />
             </div>
             <h2 className="font-semibold text-sm bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Analisis Berita {ticker}
+              {ticker ? `Analisis Berita ${ticker}` : 'Analisis Berita'}
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -151,12 +162,11 @@ export default function NewsSidebar({
             )}
           </div>
         </button>
-        
+
         {/* Content - Collapsible */}
-        <div 
-          className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${
-            isCollapsed ? 'max-h-0 p-0 opacity-0' : 'max-h-full opacity-100'
-          }`}
+        <div
+          className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${isCollapsed ? 'max-h-0 p-0 opacity-0' : 'max-h-full opacity-100'
+            }`}
         >
           {!isCollapsed && renderContent()}
         </div>
@@ -180,10 +190,10 @@ export default function NewsSidebar({
               <Newspaper className="w-4 h-4 text-white" />
             </div>
             <h2 className="font-semibold text-lg bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              Analisis Berita {ticker}
+              {ticker ? `Analisis Berita ${ticker}` : 'Analisis Berita'}
             </h2>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 hover:bg-red-500/20 rounded-lg transition-all duration-200 hover:scale-110 group"
           >

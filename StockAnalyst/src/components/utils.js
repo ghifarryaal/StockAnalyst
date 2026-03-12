@@ -109,3 +109,17 @@ export const getScoreBadgeColor = (status = "") => {
 
   return "bg-gradient-to-r from-gray-500 to-gray-600";
 };
+
+// Simple global cache to store chart data
+export const globalChartCache = {
+  data: {},
+  set: function (key, value) {
+    this.data[key] = value;
+  },
+  get: function (key) {
+    return this.data[key];
+  },
+  has: function (key) {
+    return !!this.data[key];
+  }
+};

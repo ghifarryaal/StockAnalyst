@@ -8,7 +8,8 @@ import { Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import {
   formatNumber,
   formatQuarter,
-  getScoreBadgeColor
+  getScoreBadgeColor,
+  globalChartCache
 } from "./utils";
 
 const API_BASE = "https://api.indonesiastockanalyst.my.id";
@@ -22,6 +23,14 @@ const IncomeChart = ({ symbol }) => {
   const fetchData = useCallback(async () => {
     if (!symbol) return;
     const t = symbol.length === 4 ? symbol + ".JK" : symbol;
+
+    const cacheKey = `INCOME_${t}`;
+
+    // Force refresh is needed if error is present but we want to retry
+    if (globalChartCache.has(cacheKey) && !error) {
+      setJson(globalChartCache.get(cacheKey));
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -40,6 +49,7 @@ const IncomeChart = ({ symbol }) => {
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
 
       const data = await res.json();
+      globalChartCache.set(cacheKey, data);
       setJson(data);
     } catch (err) {
       clearTimeout(timeoutId);
@@ -86,7 +96,10 @@ const IncomeChart = ({ symbol }) => {
             <p className="text-xs text-gray-400 max-w-xs">{error}</p>
           </div>
           <button
-            onClick={fetchData}
+            onClick={() => {
+              setError(null);
+              fetchData();
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-red-600/30 hover:bg-red-600/50 border border-red-500/40 rounded-lg text-sm text-red-300 transition-all hover:scale-105 active:scale-95"
           >
             <RefreshCw size={14} />

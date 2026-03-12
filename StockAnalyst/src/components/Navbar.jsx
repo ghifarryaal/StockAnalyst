@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-const Navbar = () => {
+const Navbar = ({ onOpenGlossary, onOpenIndustryGuide, extraActions }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, isAuthenticated, logout } = useAuth();
@@ -85,13 +85,13 @@ const Navbar = () => {
                         Edukasi
                     </button>
                     <button
-                        onClick={() => navigate('/industry-guide')}
+                        onClick={() => onOpenIndustryGuide ? onOpenIndustryGuide() : navigate('/industry-guide')}
                         className={`text-sm font-medium transition-colors ${location.pathname === '/industry-guide' ? 'text-cyan-400' : 'text-gray-400 hover:text-white'}`}
                     >
                         Industri
                     </button>
                     <button
-                        onClick={() => navigate('/glossary')}
+                        onClick={() => onOpenGlossary ? onOpenGlossary() : navigate('/glossary')}
                         className={`text-sm font-medium transition-colors ${location.pathname === '/glossary' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                     >
                         Glosarium
@@ -100,6 +100,7 @@ const Navbar = () => {
 
                 {/* RIGHT ACTIONS */}
                 <div className="flex items-center gap-3">
+                    {extraActions}
                     {!isAuthenticated ? (
                         <button
                             onClick={() => navigate("/login")}

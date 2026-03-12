@@ -330,7 +330,8 @@ CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (a
 
 DROP POLICY IF EXISTS "Admins can update any user" ON public.users;
 CREATE POLICY "Admins can update any user" ON public.users FOR UPDATE 
-  USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
+  USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));
 
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.users;
 CREATE POLICY "Users can insert own profile" ON public.users FOR INSERT 
@@ -398,6 +399,10 @@ CREATE POLICY "Users can delete own reactions" ON public.post_reactions FOR DELE
   USING (user_id = auth.uid());
 
 -- Post reports policies
+DROP POLICY IF EXISTS "Users can view own reports" ON public.post_reports;
+CREATE POLICY "Users can view own reports" ON public.post_reports FOR SELECT 
+  USING (reporter_id = auth.uid());
+
 DROP POLICY IF EXISTS "Admins can view all reports" ON public.post_reports;
 CREATE POLICY "Admins can view all reports" ON public.post_reports FOR SELECT 
   USING (EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'));

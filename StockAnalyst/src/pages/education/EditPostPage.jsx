@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Mail, GraduationCap, CheckCircle, AlertCircle, Loader2, ArrowLeft, Save } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../services/supabaseClient';
+import { getEducatorProfile } from '../../services/authService';
 import { getPostById, updatePost } from '../../services/educationService';
 import PostForm from '../../components/education/PostForm';
 
@@ -23,11 +23,7 @@ const EditPostPage = () => {
 
             try {
                 // Check verification status first
-                const { data: profile, error: profileError } = await supabase
-                    .from('educator_profiles')
-                    .select('verification_status')
-                    .eq('educator_id', user.id)
-                    .maybeSingle();
+                const { data: profile, error: profileError } = await getEducatorProfile(user.id);
 
                 if (profileError) throw profileError;
 

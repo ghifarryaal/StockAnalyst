@@ -1,0 +1,174 @@
+[
+  {
+    "name": "users",
+    "type": "auth",
+    "system": true,
+    "schema": [
+      {
+        "name": "full_name",
+        "type": "text"
+      },
+      {
+        "name": "role",
+        "type": "select",
+        "options": {
+          "values": [
+            "user",
+            "educator",
+            "admin"
+          ]
+        }
+      },
+      {
+        "name": "is_verified",
+        "type": "bool"
+      },
+      {
+        "name": "is_banned",
+        "type": "bool"
+      }
+    ]
+  },
+  {
+    "name": "stock_analysis_cache",
+    "type": "base",
+    "schema": [
+      {
+        "name": "ticker",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "analysis_text",
+        "type": "editor",
+        "required": true
+      },
+      {
+        "name": "expires_at",
+        "type": "date",
+        "required": true
+      }
+    ],
+    "indexes": [
+      "CREATE INDEX idx_ticker ON stock_analysis_cache (ticker)"
+    ]
+  },
+  {
+    "name": "education_posts",
+    "type": "base",
+    "schema": [
+      {
+        "name": "educator",
+        "type": "relation",
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": 1
+        },
+        "required": true
+      },
+      {
+        "name": "title",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "ticker",
+        "type": "text"
+      },
+      {
+        "name": "category",
+        "type": "select",
+        "options": {
+          "values": [
+            "sentiment",
+            "news",
+            "fundamental",
+            "technical"
+          ]
+        }
+      },
+      {
+        "name": "content",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "reference_links",
+        "type": "json"
+      },
+      {
+        "name": "likes_count",
+        "type": "number",
+        "default": 0
+      },
+      {
+        "name": "dislikes_count",
+        "type": "number",
+        "default": 0
+      },
+      {
+        "name": "is_deleted",
+        "type": "bool",
+        "default": false
+      },
+      {
+        "name": "deleted_at",
+        "type": "date"
+      },
+      {
+        "name": "deleted_by",
+        "type": "text"
+      },
+      {
+        "name": "deleted_reason",
+        "type": "text"
+      }
+    ]
+  },
+  {
+    "name": "educator_profiles",
+    "type": "base",
+    "schema": [
+      {
+        "name": "educator",
+        "type": "relation",
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": 1
+        },
+        "required": true
+      },
+      {
+        "name": "certificate_number",
+        "type": "text"
+      },
+      {
+        "name": "verification_status",
+        "type": "select",
+        "options": {
+          "values": [
+            "pending",
+            "approved",
+            "rejected"
+          ]
+        },
+        "default": "pending"
+      },
+      {
+        "name": "total_likes",
+        "type": "number",
+        "default": 0
+      },
+      {
+        "name": "total_dislikes",
+        "type": "number",
+        "default": 0
+      },
+      {
+        "name": "total_posts",
+        "type": "number",
+        "default": 0
+      }
+    ]
+  }
+]

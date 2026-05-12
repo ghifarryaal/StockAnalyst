@@ -1,7 +1,7 @@
-import { supabase } from './supabaseClient';
+import { pb } from './pocketbase';
 
 /**
- * Report Service
+ * Report Service (PocketBase Version)
  * Handles reporting of education posts
  */
 
@@ -11,51 +11,41 @@ import { supabase } from './supabaseClient';
 
 /**
  * Report a post
- * @param {string} postId - Post UUID
- * @param {string} reason - Report reason
- * @returns {Object} { report, error }
  */
 export const reportPost = async (postId, reason) => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
+        if (!pb.authStore.isValid) {
             return { report: null, error: 'User not authenticated' };
         }
+
+        const user = pb.authStore.record;
 
         if (!reason || !reason.trim()) {
             return { report: null, error: 'Reason is required' };
         }
 
         // Check if user already reported this post
-        const { data: existingReport } = await supabase
-            .from('post_reports')
-            .select('id')
-            .eq('post_id', postId)
-            .eq('reporter_id', user.id)
-            .maybeSingle();
-
-        if (existingReport) {
-            return { report: null, error: 'You have already reported this post' };
+        try {
+            const existingReport = await pb.collection('post_reports').getFirstListItem(
+                `post = "${postId}" && reporter = "${user.id}"`
+            );
+            if (existingReport) {
+                return { report: null, error: 'You have already reported this post' };
+            }
+        } catch (err) {
+            if (err.status !== 404) throw err;
         }
 
-        const { data, error } = await supabase
-            .from('post_reports')
-            .insert([{
-                post_id: postId,
-                reporter_id: user.id,
-                reason: reason.trim(),
-                status: 'pending'
-            }])
-            .select()
-            .single();
+        const data = {
+            post: postId,
+            reporter: user.id,
+            reason: reason.trim(),
+            status: 'pending'
+        };
 
-        if (error) {
-            console.error('Error creating report:', error);
-            return { report: null, error: error.message };
-        }
+        const report = await pb.collection('post_reports').create(data);
 
-        return { report: data, error: null };
+        return { report, error: null };
     } catch (err) {
         console.error('Exception in reportPost:', err);
         return { report: null, error: err.message };
@@ -68,42 +58,21 @@ export const reportPost = async (postId, reason) => {
 
 /**
  * Get all reports (admin only)
- * @param {string} status - Filter by status (pending/reviewed/dismissed)
- * @returns {Object} { reports, error }
  */
 export const getReports = async (status = 'pending') => {
     try {
-        let query = supabase
-            .from('post_reports')
-            .select(`
-        *,
-        post:education_posts (
-          id,
-          title,
-          ticker,
-          category,
-          educator_id
-        ),
-        reporter:users!reporter_id (
-          id,
-          full_name,
-          email
-        )
-      `)
-            .order('created_at', { ascending: false });
-
+        let filter = '';
         if (status) {
-            query = query.eq('status', status);
+            filter = `status = "${status}"`;
         }
 
-        const { data, error } = await query;
+        const reports = await pb.collection('post_reports').getFullList({
+            filter: filter,
+            sort: '-created',
+            expand: 'post,reporter'
+        });
 
-        if (error) {
-            console.error('Error fetching reports:', error);
-            return { reports: [], error: error.message };
-        }
-
-        return { reports: data || [], error: null };
+        return { reports: reports || [], error: null };
     } catch (err) {
         console.error('Exception in getReports:', err);
         return { reports: [], error: err.message };
@@ -112,29 +81,16 @@ export const getReports = async (status = 'pending') => {
 
 /**
  * Get reports for a specific post
- * @param {string} postId - Post UUID
- * @returns {Object} { reports, error }
  */
 export const getPostReports = async (postId) => {
     try {
-        const { data, error } = await supabase
-            .from('post_reports')
-            .select(`
-        *,
-        reporter:users!reporter_id (
-          id,
-          full_name
-        )
-      `)
-            .eq('post_id', postId)
-            .order('created_at', { ascending: false });
+        const reports = await pb.collection('post_reports').getFullList({
+            filter: `post = "${postId}"`,
+            sort: '-created',
+            expand: 'reporter'
+        });
 
-        if (error) {
-            console.error('Error fetching post reports:', error);
-            return { reports: [], error: error.message };
-        }
-
-        return { reports: data || [], error: null };
+        return { reports: reports || [], error: null };
     } catch (err) {
         console.error('Exception in getPostReports:', err);
         return { reports: [], error: err.message };
@@ -143,31 +99,22 @@ export const getPostReports = async (postId) => {
 
 /**
  * Check if user has reported a post
- * @param {string} postId - Post UUID
- * @returns {Object} { hasReported, error }
  */
 export const hasUserReportedPost = async (postId) => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
+        if (!pb.authStore.isValid) {
             return { hasReported: false, error: null };
         }
 
-        const { data, error } = await supabase
-            .from('post_reports')
-            .select('id')
-            .eq('post_id', postId)
-            .eq('reporter_id', user.id)
-            .maybeSingle();
+        const user = pb.authStore.record;
 
-        if (error && error.code !== 'PGRST116') {
-            console.error('Error checking report status:', error);
-            return { hasReported: false, error: error.message };
-        }
+        const report = await pb.collection('post_reports').getFirstListItem(
+            `post = "${postId}" && reporter = "${user.id}"`
+        );
 
-        return { hasReported: !!data, error: null };
+        return { hasReported: !!report, error: null };
     } catch (err) {
+        if (err.status === 404) return { hasReported: false, error: null };
         console.error('Exception in hasUserReportedPost:', err);
         return { hasReported: false, error: err.message };
     }
@@ -179,37 +126,23 @@ export const hasUserReportedPost = async (postId) => {
 
 /**
  * Review a report (admin only)
- * @param {string} reportId - Report UUID
- * @param {string} status - New status (reviewed/dismissed)
- * @param {string} adminNotes - Admin notes
- * @returns {Object} { report, error }
  */
 export const reviewReport = async (reportId, status, adminNotes = '') => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
+        if (!pb.authStore.isValid) {
             return { report: null, error: 'User not authenticated' };
         }
 
-        const { data, error } = await supabase
-            .from('post_reports')
-            .update({
-                status,
-                admin_notes: adminNotes,
-                reviewed_by: user.id,
-                reviewed_at: new Date().toISOString()
-            })
-            .eq('id', reportId)
-            .select()
-            .single();
+        const user = pb.authStore.record;
 
-        if (error) {
-            console.error('Error reviewing report:', error);
-            return { report: null, error: error.message };
-        }
+        const report = await pb.collection('post_reports').update(reportId, {
+            status,
+            admin_notes: adminNotes,
+            reviewed_by: user.id,
+            reviewed_at: new Date().toISOString()
+        });
 
-        return { report: data, error: null };
+        return { report, error: null };
     } catch (err) {
         console.error('Exception in reviewReport:', err);
         return { report: null, error: err.message };

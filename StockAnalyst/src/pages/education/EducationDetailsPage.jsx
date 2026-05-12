@@ -136,13 +136,13 @@ const EducationDetailsPage = () => {
                                     <User className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-bold">{post.educator?.full_name}</p>
+                                    <p className="text-white font-bold">{post.expand?.educator?.full_name}</p>
                                     <div className="flex items-center gap-4 text-xs text-gray-400 mt-1">
                                         <div className="flex items-center gap-1.5">
                                             <Calendar className="w-3.5 h-3.5" />
-                                            <span>{new Date(post.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                            <span>{new Date(post.created).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                         </div>
-                                        {post.educator_profile?.verification_status === 'approved' && (
+                                        {post.expand?.educator?.expand?.educator_profiles_via_educator?.[0]?.verification_status === 'approved' && (
                                             <span className="text-green-400 font-bold flex items-center gap-1">
                                                 <GraduationCap className="w-3.5 h-3.5" />
                                                 Verified Educator

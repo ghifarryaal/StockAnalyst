@@ -4,7 +4,7 @@ import { ArrowLeft, Shield, Flag, Users, CheckCircle, XCircle, Eye, Loader2, Ale
 import { useAuth } from '../../contexts/AuthContext';
 import { getReports, reviewReport } from '../../services/reportService';
 import { adminDeletePost } from '../../services/educationService';
-import { supabase } from '../../services/supabaseClient';
+import { pb } from '../../services/pocketbase';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -37,14 +37,11 @@ const AdminDashboard = () => {
 
         try {
             // Load stats
-            const { data: usersData } = await supabase
-                .from('users')
-                .select('id', { count: 'exact' });
-
-            const { data: pendingEducatorsData } = await supabase
-                .from('educator_profiles')
-                .select('id', { count: 'exact' })
-                .eq('verification_status', 'pending');
+            const usersData = await pb.collection('users').getFullList({ fields: 'id' });
+            const pendingEducatorsData = await pb.collection('educator_profiles').getFullList({
+                filter: 'verification_status = "pending"',
+                fields: 'id'
+            });
 
             setStats({
                 totalUsers: usersData?.length || 0,
@@ -62,18 +59,11 @@ const AdminDashboard = () => {
                     setStats(prev => ({ ...prev, pendingReports: reportsData.length }));
                 }
             } else if (activeTab === 'educators') {
-                const { data: educatorsData, error: educatorsError } = await supabase
-                    .from('educator_profiles')
-                    .select(`
-            *,
-            educator:users!educator_id (
-              id,
-              full_name,
-              email
-            )
-          `)
-                    .eq('verification_status', 'pending')
-                    .order('created_at', { ascending: false });
+                const educatorsData = await pb.collection('educator_profiles').getFullList({
+                    filter: 'verification_status = "pending"',
+                    sort: '-created',
+                    expand: 'educator'
+                });
 
                 if (educatorsError) {
                     setError(educatorsError.message);
@@ -81,10 +71,9 @@ const AdminDashboard = () => {
                     setEducators(educatorsData || []);
                 }
             } else if (activeTab === 'users') {
-                const { data: usersData, error: usersError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                const usersData = await pb.collection('users').getFullList({
+                    sort: '-created'
+                });
 
                 if (usersError) {
                     setError(usersError.message);
@@ -130,14 +119,11 @@ const AdminDashboard = () => {
 
         try {
             const status = action === 'approve' ? 'approved' : 'rejected';
-            const { error: updateError } = await supabase
-                .from('educator_profiles')
-                .update({
-                    verification_status: status,
-                    verified_at: new Date().toISOString(),
-                    verified_by: user.id
-                })
-                .eq('educator_id', educatorId);
+            await pb.collection('educator_profiles').update(educatorId, {
+                verification_status: status,
+                verified_at: new Date().toISOString(),
+                verified_by: user.id
+            });
 
             if (updateError) {
                 alert(`Gagal memverifikasi: ${updateError.message}`);
@@ -174,14 +160,11 @@ const AdminDashboard = () => {
             return;
         }
 
-        const { error } = await supabase
-            .from('users')
-            .update({
-                is_banned: banned,
-                banned_reason: reason,
-                banned_at: banned ? new Date().toISOString() : null
-            })
-            .eq('id', userId);
+        await pb.collection('users').update(userId, {
+            is_banned: banned,
+            banned_reason: reason,
+            banned_at: banned ? new Date().toISOString() : null
+        });
 
         if (error) {
             alert(`Error: ${error.message}`);
@@ -352,7 +335,7 @@ const AdminDashboard = () => {
                                                             <strong>Alasan:</strong> {report.reason}
                                                         </p>
                                                         <p className="text-xs text-gray-500">
-                                                            Dilaporkan oleh: {report.reporter?.full_name} • {new Date(report.created_at).toLocaleDateString('id-ID')}
+                                                            Dilaporkan oleh: {report.expand?.reporter?.full_name} • {new Date(report.created).toLocaleDateString('id-ID')}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -411,7 +394,7 @@ const AdminDashboard = () => {
                                                 <div className="flex items-start justify-between gap-4 mb-3">
                                                     <div className="flex-1">
                                                         <h3 className="font-bold text-white mb-1">
-                                                            {educator.educator?.full_name}
+                                                            {educator.expand?.educator?.full_name}
                                                         </h3>
                                                         <p className="text-sm text-gray-400 mb-2">
                                                             {educator.educator?.email}
@@ -420,7 +403,7 @@ const AdminDashboard = () => {
                                                             <strong>Certificate:</strong> {educator.certificate_number}
                                                         </p>
                                                         <p className="text-xs text-gray-500 mt-2">
-                                                            Mendaftar: {new Date(educator.created_at).toLocaleDateString('id-ID')}
+                                                            Mendaftar: {new Date(educator.created).toLocaleDateString('id-ID')}
                                                         </p>
                                                     </div>
                                                 </div>

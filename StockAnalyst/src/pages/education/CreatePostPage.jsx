@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../services/supabaseClient';
 import { createPost } from '../../services/educationService';
+import { getEducatorProfile } from '../../services/authService';
 import PostForm from '../../components/education/PostForm';
 import { Mail, GraduationCap, CheckCircle, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -24,11 +24,7 @@ const CreatePostPage = () => {
             }
 
             try {
-                const { data, error: profileError } = await supabase
-                    .from('educator_profiles')
-                    .select('verification_status')
-                    .eq('educator_id', user.id)
-                    .maybeSingle();
+                const { data, error: profileError } = await getEducatorProfile(user.id);
 
                 if (profileError) throw profileError;
                 setIsVerified(data?.verification_status === 'approved');

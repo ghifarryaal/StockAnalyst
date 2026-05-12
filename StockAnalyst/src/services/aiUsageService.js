@@ -1,31 +1,29 @@
-import { supabase } from './supabaseClient';
+import { pb } from './pocketbase';
 
 /**
- * AI Usage Service
+ * AI Usage Service (PocketBase Version)
  * Handles rate limiting for AI prompts (5 per day)
  */
 
 /**
  * Get current user's AI usage for today
- * @returns {Promise<{count: number, error: string|null}>}
  */
 export const getTodayUsage = async () => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { count: 0, error: 'Not authenticated' };
-
+        if (!pb.authStore.isValid) return { count: 0, error: 'Not authenticated' };
+        
+        const user = pb.authStore.record;
         const today = new Date().toISOString().split('T')[0];
 
-        const { data, error } = await supabase
-            .from('ai_usage')
-            .select('prompt_count')
-            .eq('user_id', user.id)
-            .eq('usage_date', today)
-            .maybeSingle();
-
-        if (error) throw error;
-
-        return { count: data?.prompt_count || 0, error: null };
+        try {
+            const result = await pb.collection('ai_usage').getFirstListItem(
+                `user = "${user.id}" && usage_date = "${today}"`
+            );
+            return { count: result.prompt_count || 0, error: null };
+        } catch (err) {
+            if (err.status === 404) return { count: 0, error: null };
+            throw err;
+        }
     } catch (error) {
         console.error('Error getting AI usage:', error);
         return { count: 0, error: error.message };
@@ -34,48 +32,37 @@ export const getTodayUsage = async () => {
 
 /**
  * Increment AI usage count for today
- * @returns {Promise<{success: boolean, error: string|null}>}
  */
 export const incrementUsage = async () => {
     try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { success: false, error: 'Not authenticated' };
+        if (!pb.authStore.isValid) return { success: false, error: 'Not authenticated' };
 
+        const user = pb.authStore.record;
         const today = new Date().toISOString().split('T')[0];
 
-        // Try to update existing record
-        const { data, error: fetchError } = await supabase
-            .from('ai_usage')
-            .select('id, prompt_count')
-            .eq('user_id', user.id)
-            .eq('usage_date', today)
-            .maybeSingle();
+        let existingRecord = null;
+        try {
+            existingRecord = await pb.collection('ai_usage').getFirstListItem(
+                `user = "${user.id}" && usage_date = "${today}"`
+            );
+        } catch (err) {
+            if (err.status !== 404) throw err;
+        }
 
-        if (fetchError) throw fetchError;
-
-        if (data) {
+        if (existingRecord) {
             // Update
-            const { error: updateError } = await supabase
-                .from('ai_usage')
-                .update({
-                    prompt_count: data.prompt_count + 1,
-                    last_prompt_at: new Date().toISOString()
-                })
-                .eq('id', data.id);
-
-            if (updateError) throw updateError;
+            await pb.collection('ai_usage').update(existingRecord.id, {
+                prompt_count: existingRecord.prompt_count + 1,
+                last_prompt_at: new Date().toISOString()
+            });
         } else {
             // Insert
-            const { error: insertError } = await supabase
-                .from('ai_usage')
-                .insert({
-                    user_id: user.id,
-                    usage_date: today,
-                    prompt_count: 1,
-                    last_prompt_at: new Date().toISOString()
-                });
-
-            if (insertError) throw insertError;
+            await pb.collection('ai_usage').create({
+                user: user.id,
+                usage_date: today,
+                prompt_count: 1,
+                last_prompt_at: new Date().toISOString()
+            });
         }
 
         return { success: true, error: null };
@@ -87,7 +74,6 @@ export const incrementUsage = async () => {
 
 /**
  * Check if user can perform an AI prompt
- * @returns {Promise<{allowed: boolean, remaining: number, error: string|null}>}
  */
 export const checkUsageLimit = async () => {
     const LIMIT = 5;

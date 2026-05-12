@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Building2, Search, X, TrendingUp, TrendingDown } from 'lucide-react';
 
-const IndustryGuide = ({ isOpen, onClose }) => {
+const IndustryGuide = ({ isOpen, onClose, standalone = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeSector, setActiveSector] = useState('all');
 
@@ -390,27 +390,29 @@ const IndustryGuide = ({ isOpen, onClose }) => {
     return matchesSearch && matchesSector;
   });
 
-  if (!isOpen) return null;
+  if (!isOpen && !standalone) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden border border-slate-700">
+    <div className={standalone ? "" : "fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"}>
+      <div className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl ${standalone ? "" : "max-h-[90vh] overflow-hidden"} border border-slate-700`}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-6 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-white" />
-            <div>
-              <h2 className="text-2xl font-bold text-white">Panduan Sektor & Industri</h2>
-              <p className="text-blue-100 text-sm mt-1">Klasifikasi lengkap industri saham Indonesia</p>
+        {!standalone && (
+          <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-6 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-8 h-8 text-white" />
+              <div>
+                <h2 className="text-2xl font-bold text-white">Panduan Sektor & Industri</h2>
+                <p className="text-blue-100 text-sm mt-1">Klasifikasi lengkap industri saham Indonesia</p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <X className="w-6 h-6 text-white" />
-          </button>
-        </div>
+        )}
 
         {/* Search Bar */}
         <div className="p-4 border-b border-slate-700">

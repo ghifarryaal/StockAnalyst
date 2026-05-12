@@ -96,13 +96,13 @@ const PostCard = ({ post, onCategoryClick, onTickerClick }) => {
                             {/* Educator Info */}
                             <div className="flex items-center gap-2 text-sm text-gray-400">
                                 <User className="w-4 h-4" />
-                                <span>{post.educator?.full_name || 'Unknown Educator'}</span>
-                                {post.educator_profile?.verification_status === 'approved' && (
+                                <span>{post.expand?.educator?.full_name || 'Unknown Educator'}</span>
+                                {post.expand?.educator?.expand?.educator_profiles_via_educator?.[0]?.verification_status === 'approved' && (
                                     <span className="text-green-400">✓ Verified</span>
                                 )}
                                 <span>•</span>
                                 <Calendar className="w-4 h-4" />
-                                <span>{formatDate(post.created_at)}</span>
+                                <span>{formatDate(post.created)}</span>
                             </div>
                         </div>
                     </div>

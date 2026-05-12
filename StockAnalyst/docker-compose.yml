@@ -8,8 +8,25 @@ services:
         - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
         - VITE_N8N_WEBHOOK_URL=${VITE_N8N_WEBHOOK_URL}
         - VITE_N8N_NEWS_URL=${VITE_N8N_NEWS_URL}
+        - VITE_POCKETBASE_URL=${VITE_POCKETBASE_URL}
     restart: always
     ports:
       - "3000:80"
-    # This maps host port 3000 (localhost only) to container port 80.
-    # Nginx on the host will proxy to 127.0.0.1:3000.
+    depends_on:
+      - pocketbase
+
+  pocketbase:
+    build:
+      context: .
+      dockerfile: pocketbase.Dockerfile
+    container_name: stock-pocketbase
+    restart: always
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./pb_data:/pb_data
+      - ./pb_migrations:/pb/pb_migrations
+    command:
+      - /pb/pocketbase
+      - serve
+      - --http=0.0.0.0:8090

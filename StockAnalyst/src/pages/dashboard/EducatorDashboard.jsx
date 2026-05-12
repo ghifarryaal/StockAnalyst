@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, GraduationCap, ThumbsUp, ThumbsDown, FileText, TrendingUp, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getPostsByEducator, deletePost } from '../../services/educationService';
-import { supabase } from '../../services/supabaseClient';
+import { getEducatorProfile } from '../../services/authService';
 
 const EducatorDashboard = () => {
     const navigate = useNavigate();
@@ -32,11 +32,7 @@ const EducatorDashboard = () => {
 
         try {
             // Get educator profile
-            const { data: profile, error: profileError } = await supabase
-                .from('educator_profiles')
-                .select('*')
-                .eq('educator_id', user.id)
-                .maybeSingle();
+            const { data: profile, error: profileError } = await getEducatorProfile(user.id);
 
             if (profileError) {
                 console.error('Error fetching profile:', profileError);
@@ -293,7 +289,7 @@ const EducatorDashboard = () => {
                                                             {post.dislikes_count || 0}
                                                         </span>
                                                         <span>
-                                                            {new Date(post.created_at).toLocaleDateString('id-ID')}
+                                                            {new Date(post.created).toLocaleDateString('id-ID')}
                                                         </span>
                                                     </div>
                                                 </div>

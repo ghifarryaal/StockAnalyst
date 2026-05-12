@@ -48,7 +48,8 @@ const LoginPage = () => {
             } else if (user.role === 'educator') {
                 navigate('/dashboard/educator');
             } else {
-                navigate('/education');
+                const from = location.state?.from || '/';
+                navigate(from);
             }
         } catch (err) {
             setError('Terjadi kesalahan. Silakan coba lagi.');

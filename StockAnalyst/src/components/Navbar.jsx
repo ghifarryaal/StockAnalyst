@@ -103,7 +103,7 @@ const Navbar = ({ onOpenGlossary, onOpenIndustryGuide, extraActions }) => {
                     {extraActions}
                     {!isAuthenticated ? (
                         <button
-                            onClick={() => navigate("/login")}
+                            onClick={() => navigate("/login", { state: { from: location.pathname } })}
                             className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-5 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-blue-500/40"
                         >
                             <LogIn size={16} />

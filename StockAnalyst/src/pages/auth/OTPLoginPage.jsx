@@ -122,7 +122,8 @@ const OTPLoginPage = () => {
         } else if (user.role === 'educator') {
             navigate('/dashboard/educator');
         } else {
-            navigate('/education');
+            const from = location.state?.from || '/';
+            navigate(from);
         }
     };
 

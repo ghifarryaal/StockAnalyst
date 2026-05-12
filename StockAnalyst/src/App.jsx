@@ -14,7 +14,7 @@ import Navbar from "./components/Navbar";
 
 function App() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
 
   const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
 
@@ -40,6 +40,10 @@ function App() {
 
   const handleSubmit = async (e, directTicker = null) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: '/' } });
+      return;
+    }
     const tickerToUse = directTicker || input.trim();
     if (!tickerToUse) return;
 
@@ -208,17 +212,34 @@ function App() {
         onSubmit={handleSubmit}
         className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#0f1117]/95 via-[#0f1117]/90 to-transparent p-4 border-t border-gray-700/30 backdrop-blur-xl"
       >
-        <div className="max-w-3xl mx-auto flex gap-3">
+        <div className="max-w-3xl mx-auto flex gap-3 relative">
+          {authLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm rounded-xl z-20">
+              <Loader2 className="animate-spin text-blue-500" size={20} />
+            </div>
+          )}
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
             placeholder="Ketik kode saham (cth: BBCA)"
-            disabled={loading}
+            disabled={loading || !isAuthenticated}
             className="flex-1 bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm hover:border-gray-600/50"
           />
+          {!isAuthenticated && !authLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-900/60 backdrop-blur-[2px] rounded-xl z-10 border border-blue-500/30 group">
+              <button
+                type="button"
+                onClick={() => navigate('/login', { state: { from: '/' } })}
+                className="flex items-center gap-2 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 rounded-lg shadow-xl hover:scale-105 transition-all"
+              >
+                <LogIn size={16} />
+                Login untuk menggunakan AI
+              </button>
+            </div>
+          )}
           <button
             type="submit"
-            disabled={loading || !input.trim()}
+            disabled={loading || !input.trim() || !isAuthenticated}
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed px-5 rounded-xl transition-all duration-200 shadow-lg hover:shadow-blue-500/50 disabled:shadow-none group hover:scale-105 active:scale-95"
           >
             <Send className="group-hover:translate-x-0.5 transition-transform" size={20} />

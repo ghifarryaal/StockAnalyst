@@ -10,6 +10,7 @@ const OTPRegisterPage = () => {
     const [email, setEmail] = useState('');
     const [fullName, setFullName] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otpId, setOtpId] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -27,13 +28,15 @@ const OTPRegisterPage = () => {
             return;
         }
 
-        const { error: otpError } = await sendOTP(email);
+        const { otpId: newOtpId, error: otpError } = await sendOTP(email);
 
         if (otpError) {
             setError(otpError);
             setLoading(false);
             return;
         }
+
+        setOtpId(newOtpId);
 
         setSuccess('OTP telah dikirim ke email Anda! Segera cek Inbox atau folder Spam.');
         setStep(2);
@@ -63,11 +66,12 @@ const OTPRegisterPage = () => {
         setError('');
         setLoading(true);
 
-        const { error: otpError } = await sendOTP(email);
+        const { otpId: newOtpId, error: otpError } = await sendOTP(email);
 
         if (otpError) {
             setError(otpError);
         } else {
+            setOtpId(newOtpId);
             setSuccess('OTP baru telah dikirim!');
             startCountdown();
         }
@@ -107,7 +111,7 @@ const OTPRegisterPage = () => {
             return;
         }
 
-        const { user, error: verifyError } = await verifyOTP(email, otpCode);
+        const { user, error: verifyError } = await verifyOTP(otpId, otpCode);
 
         if (verifyError) {
             setError(verifyError);

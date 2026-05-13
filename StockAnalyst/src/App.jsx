@@ -1,15 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Send, Loader2, Sparkles, Newspaper, BookOpen, Building2, LogIn, GraduationCap, LayoutDashboard } from "lucide-react";
+import { Send, Loader2, LogIn, AlertTriangle, Newspaper } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import ChatMessage from "./components/ChatMessage";
 import TabChart from "./components/TabChart";
 import NewsSidebar from "./components/NewsSidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
-import StockTicker from "./components/StockTicker";
-import TopStocks from "./components/TopStocks";
-import Glossary from "./components/Glossary";
-import IndustryGuide from "./components/IndustryGuide";
 import Navbar from "./components/Navbar";
 
 function App() {
@@ -29,8 +25,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [ticker, setTicker] = useState("");
   const [openNews, setOpenNews] = useState(false);
-  const [openGlossary, setOpenGlossary] = useState(false);
-  const [openIndustryGuide, setOpenIndustryGuide] = useState(false);
 
   const endRef = useRef(null);
 
@@ -134,14 +128,11 @@ function App() {
     <div className="h-screen bg-transparent text-gray-100 flex flex-col relative overflow-hidden">
       {/* HEADER */}
       <Navbar
-        onOpenGlossary={() => setOpenGlossary(true)}
-        onOpenIndustryGuide={() => setOpenIndustryGuide(true)}
         extraActions={
           ticker && (
             <button
               onClick={() => setOpenNews(true)}
               className="lg:hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 border-none text-white whitespace-nowrap"
-              style={{ boxShadow: '0 0 15px rgba(59, 130, 246, 0.3)' }}
             >
               <Newspaper size={16} /> <span className="hidden sm:inline">Berita</span>
             </button>
@@ -149,29 +140,31 @@ function App() {
         }
       />
 
-      {/* STOCK TICKER */}
-      <StockTicker
-        currentTicker={ticker}
-        onTickerClick={(code) => {
-          handleSubmit({ preventDefault: () => { } }, code);
-        }}
-      />
+      {/* DISCLAIMER BANNER */}
+      <div className="bg-amber-900/30 border-b border-amber-700/40 px-4 py-2">
+        <div className="max-w-5xl mx-auto flex items-center gap-2">
+          <AlertTriangle size={13} className="text-amber-400 flex-shrink-0" />
+          <p className="text-xs text-amber-300/90">
+            <strong>Disclaimer:</strong> StockAnalyst AI bukan penasihat keuangan berlisensi. Analisis ini hanya untuk referensi, bukan rekomendasi beli/jual. Investasi mengandung risiko.
+          </p>
+        </div>
+      </div>
 
       {/* BODY */}
       <div className="flex flex-1 overflow-hidden">
-        {/* LEFT NEWS */}
+        {/* LEFT NEWS SIDEBAR (Sentiment Analysis) */}
         <aside className="hidden lg:block w-80 border-r border-gray-700/30">
           <NewsSidebar ticker={ticker} embedded />
         </aside>
 
-        {/* MAIN */}
+        {/* MAIN CHAT */}
         <main className="flex-1 overflow-y-auto pb-40">
           <ErrorBoundary>
             {messages.map((m, i) => (
               <div key={i}>
                 <ChatMessage role={m.role} content={m.content} />
                 {m.role === "assistant" && ticker && i === messages.length - 1 && (
-                  <div className="max-w-3xl mx-auto px-4 mt-4">
+                  <div className="max-w-5xl mx-auto px-4 mt-4">
                     <TabChart symbol={`${ticker}.JK`} />
                   </div>
                 )}
@@ -180,7 +173,7 @@ function App() {
           </ErrorBoundary>
 
           {loading && (
-            <div className="max-w-3xl mx-auto px-4 mt-4 flex items-center gap-3 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-xl p-4 backdrop-blur-sm">
+            <div className="max-w-5xl mx-auto px-4 mt-4 flex items-center gap-3 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/20 rounded-xl p-4 backdrop-blur-sm">
               <Loader2 className="animate-spin text-blue-400" size={20} />
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-gray-200">Memproses AI...</span>
@@ -196,23 +189,21 @@ function App() {
 
           <div ref={endRef} />
         </main>
-
-        {/* RIGHT TOP STOCKS */}
-        <aside className="hidden lg:block w-[22rem] xl:w-96 border-l border-gray-700/30">
-          <TopStocks
-            onStockClick={(code) => {
-              handleSubmit({ preventDefault: () => { } }, code);
-            }}
-          />
-        </aside>
       </div>
+
+      {/* MOBILE NEWS DRAWER */}
+      <NewsSidebar
+        ticker={ticker}
+        isOpen={openNews}
+        onClose={() => setOpenNews(false)}
+      />
 
       {/* INPUT */}
       <form
         onSubmit={handleSubmit}
         className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-[#0f1117]/95 via-[#0f1117]/90 to-transparent p-4 border-t border-gray-700/30 backdrop-blur-xl"
       >
-        <div className="max-w-3xl mx-auto flex gap-3 relative">
+        <div className="max-w-5xl mx-auto flex gap-3 relative">
           {authLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm rounded-xl z-20">
               <Loader2 className="animate-spin text-blue-500" size={20} />
@@ -221,7 +212,7 @@ function App() {
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
-            placeholder="Ketik kode saham (cth: BBCA)"
+            placeholder="Ketik kode saham (cth: BBCA, TLKM, GOTO)"
             disabled={loading || !isAuthenticated}
             className="flex-1 bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 rounded-xl px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all placeholder:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg backdrop-blur-sm hover:border-gray-600/50"
           />
@@ -246,25 +237,6 @@ function App() {
           </button>
         </div>
       </form>
-
-      {/* MOBILE NEWS */}
-      <NewsSidebar
-        ticker={ticker}
-        isOpen={openNews}
-        onClose={() => setOpenNews(false)}
-      />
-
-      {/* GLOSSARY MODAL */}
-      <Glossary
-        isOpen={openGlossary}
-        onClose={() => setOpenGlossary(false)}
-      />
-
-      {/* INDUSTRY GUIDE MODAL */}
-      <IndustryGuide
-        isOpen={openIndustryGuide}
-        onClose={() => setOpenIndustryGuide(false)}
-      />
     </div>
   );
 }

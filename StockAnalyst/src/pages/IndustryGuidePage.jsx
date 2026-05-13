@@ -25,7 +25,7 @@ const IndustryGuidePage = () => {
             </div>
 
             {/* Content */}
-            <div className="container mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-4 py-8">
                 <IndustryGuide standalone={true} />
             </div>
         </div>

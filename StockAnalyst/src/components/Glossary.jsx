@@ -320,7 +320,7 @@ const Glossary = ({ isOpen, onClose, standalone = false }) => {
       </div>
 
       {/* Terms List */}
-      <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 280px)' }}>
+      <div className={`${standalone ? '' : 'overflow-y-auto max-h-[calc(90vh-280px)]'} p-6`}>
         {filteredTerms.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-slate-400 text-lg">Tidak ada istilah yang ditemukan</p>
@@ -364,7 +364,7 @@ const Glossary = ({ isOpen, onClose, standalone = false }) => {
   // Standalone mode: return content without modal wrapper
   if (standalone) {
     return (
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full overflow-hidden border border-slate-700">
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-7xl mx-auto overflow-hidden border border-slate-700">
         {content}
       </div>
     );

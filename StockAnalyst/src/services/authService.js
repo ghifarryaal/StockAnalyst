@@ -31,34 +31,6 @@ export const registerUser = async ({ email, password, fullName, role = 'user', m
     }
 };
 
-export const registerEducator = async ({
-    email,
-    password,
-    fullName,
-    certificateNumber,
-    certificateFileUrl = null
-}) => {
-    try {
-        const { user, error: regError } = await registerUser({
-            email,
-            password,
-            fullName,
-            role: 'educator',
-            metadata: {
-                certificate_number: certificateNumber,
-                certificate_file_url: certificateFileUrl,
-                verification_status: 'pending'
-            }
-        });
-
-        if (regError) throw new Error(regError);
-
-        return { user, error: null };
-    } catch (error) {
-        console.error('Educator registration error:', error);
-        return { user: null, error: error.message };
-    }
-};
 
 // ============================================
 // LOGIN
@@ -181,64 +153,9 @@ export const hasRole = async (role) => {
     return pb.authStore.record?.role === role;
 };
 
-// ============================================
-// OAuth
-// ============================================
-
-export const signInWithGoogle = async () => {
-    try {
-        const authData = await pb.collection('users').authWithOAuth2({ 
-            provider: 'google',
-            url: window.location.origin
-        });
-        
-        // Update profile with Google metadata if needed
-        if (authData.meta && !authData.record.full_name) {
-            await pb.collection('users').update(authData.record.id, {
-                full_name: authData.meta.name,
-                avatar_url: authData.meta.avatarUrl
-            });
-        }
-        
-        return { user: authData.record, error: null };
-    } catch (error) {
-        console.error('Google OAuth error:', error);
-        return { error: error.message };
-    }
-};
-
-export const getEducatorProfile = async (educatorId) => {
-    try {
-        const profile = await pb.collection('educator_profiles').getFirstListItem(
-            `educator = "${educatorId}"`
-        );
-        return { data: profile, error: null };
-    } catch (error) {
-        if (error.status === 404) return { data: null, error: null };
-        console.error('Error getting educator profile:', error);
-        return { data: null, error: error.message };
-    }
-};
-
-export const sendOTP = async (email) => {
-    // PocketBase doesn't have a direct equivalent to Supabase OTP login.
-    // We'll use requestPasswordReset as a fallback or return an error.
-    try {
-        await pb.collection('users').requestPasswordReset(email);
-        return { error: null };
-    } catch (error) {
-        return { error: error.message };
-    }
-};
-
-export const verifyOTP = async (email, token) => {
-    // This is not directly supported in PB without custom backend code.
-    return { error: 'OTP login is not supported in PocketBase. Please use email/password or Google login.' };
-};
 
 export default {
     registerUser,
-    registerEducator,
     loginUser,
     logoutUser,
     getCurrentUser,
@@ -247,9 +164,5 @@ export default {
     updatePassword,
     onAuthStateChange,
     isAuthenticated,
-    hasRole,
-    signInWithGoogle,
-    getEducatorProfile,
-    sendOTP,
-    verifyOTP
+    hasRole
 };

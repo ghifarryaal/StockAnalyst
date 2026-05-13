@@ -19,8 +19,8 @@ const ChatMessage = ({ role, content, isAuthWarning = false }) => {
     .trim();
 
   return (
-    <div className={`w-full py-8 ${isAi ? 'bg-transparent' : 'bg-gray-800/20 backdrop-blur-sm'} animate-fadeIn`}>
-      <div className="max-w-3xl mx-auto flex gap-6 px-4">
+    <div className={`w-full py-4 md:py-8 ${isAi ? 'bg-transparent' : 'bg-gray-800/20 backdrop-blur-sm'} animate-fadeIn`}>
+      <div className="max-w-5xl mx-auto flex gap-3 md:gap-6 px-4">
 
         {/* AVATAR */}
         <div className="shrink-0">
@@ -60,7 +60,7 @@ const ChatMessage = ({ role, content, isAuthWarning = false }) => {
           {/* CARD CONTAINER UNTUK AI */}
           <div
             className={`${isAi
-              ? 'bg-gradient-to-br from-[#161a22]/80 to-[#1a1f2e]/80 border border-gray-700/40 rounded-2xl p-6 shadow-2xl hover:shadow-blue-900/30 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-md hover:backdrop-blur-lg'
+              ? 'bg-gradient-to-br from-[#161a22]/80 to-[#1a1f2e]/80 border border-gray-700/40 rounded-2xl p-4 md:p-6 shadow-2xl hover:shadow-blue-900/30 hover:border-blue-500/30 transition-all duration-500 backdrop-blur-md hover:backdrop-blur-lg'
               : ''
               }`}
           >

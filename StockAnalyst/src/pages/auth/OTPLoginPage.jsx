@@ -10,6 +10,7 @@ const OTPLoginPage = () => {
     const [step, setStep] = useState(1); // 1: Enter email, 2: Enter OTP
     const [email, setEmail] = useState(location.state?.email || '');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otpId, setOtpId] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -28,13 +29,15 @@ const OTPLoginPage = () => {
         setError('');
         setLoading(true);
 
-        const { error: otpError } = await sendOTP(email);
+        const { otpId: newOtpId, error: otpError } = await sendOTP(email);
 
         if (otpError) {
             setError(otpError);
             setLoading(false);
             return;
         }
+
+        setOtpId(newOtpId);
 
         setSuccess('OTP telah dikirim ke email Anda!');
         setStep(2);
@@ -64,11 +67,12 @@ const OTPLoginPage = () => {
         setError('');
         setLoading(true);
 
-        const { error: otpError } = await sendOTP(email);
+        const { otpId: newOtpId, error: otpError } = await sendOTP(email);
 
         if (otpError) {
             setError(otpError);
         } else {
+            setOtpId(newOtpId);
             setSuccess('OTP baru telah dikirim!');
             startCountdown();
         }
@@ -108,7 +112,7 @@ const OTPLoginPage = () => {
             return;
         }
 
-        const { user, error: verifyError } = await verifyOTP(email, otpCode);
+        const { user, error: verifyError } = await verifyOTP(otpId, otpCode);
 
         if (verifyError) {
             setError(verifyError);

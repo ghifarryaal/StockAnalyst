@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PB Auth Test</title>
+</head>
+<body>
+    <h1>Testing PocketBase Auth Methods</h1>
+    <pre id="output">Loading...</pre>
+    <script>
+        const url = 'https://stock-pb.indonesiastockanalyst.my.id/api/collections/users/auth-methods';
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(err => {
+                document.getElementById('output').textContent = 'Error: ' + err.message;
+            });
+    </script>
+</body>
+</html>

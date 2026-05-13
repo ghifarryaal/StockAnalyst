@@ -27,7 +27,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.log di production
+        drop_console: false, // Jangan hapus console.log agar bisa debug di VPS
         drop_debugger: true,
       },
     },

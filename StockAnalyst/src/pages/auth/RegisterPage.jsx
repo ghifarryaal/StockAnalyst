@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, AlertCircle, Loader2, CheckCircle, KeyRound } from 'lucide-react';
-import { registerUser } from '../../services/authService';
+import { Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react';
+import { registerUser, loginUser } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
+    const { refreshUser } = useAuth();
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -14,7 +16,6 @@ const RegisterPage = () => {
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
 
     const handleChange = (e) => {
         setFormData({
@@ -53,7 +54,8 @@ const RegisterPage = () => {
         setLoading(true);
 
         try {
-            const { user, error: regError } = await registerUser({
+            // 1. Register the user
+            const { error: regError } = await registerUser({
                 email: formData.email,
                 password: formData.password,
                 fullName: formData.fullName,
@@ -66,52 +68,25 @@ const RegisterPage = () => {
                 return;
             }
 
-            setSuccess(true);
-            setTimeout(() => {
-                navigate('/login', { state: { email: formData.email } });
-            }, 5000);
+            // 2. Automatically login after registration
+            const { error: loginError } = await loginUser(formData.email, formData.password);
+            
+            if (loginError) {
+                // If login fails for some reason, just redirect to login page
+                navigate('/login', { state: { email: formData.email, message: 'Registrasi berhasil, silakan login.' } });
+                return;
+            }
+
+            // 3. Refresh auth context and redirect
+            await refreshUser();
+            navigate('/');
+            
         } catch (err) {
-            setError('Terjadi kesalahan. Silakan coba lagi.');
+            setError('Terjadi kesalahan saat pendaftaran.');
             setLoading(false);
         }
     };
 
-    if (success) {
-        return (
-            <div className="min-h-screen bg-gradient-to-br from-[#0f1117] via-[#1a1f2e] to-[#0f1117] flex items-center justify-center p-4">
-                <div className="w-full max-w-md">
-                    <div className="bg-slate-900/50 border border-green-500 rounded-2xl p-8 shadow-2xl text-center">
-                        <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Mail className="w-8 h-8 text-white" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-white mb-2">Registrasi Berhasil!</h2>
-
-                        <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-6 mb-6 text-left">
-                            <h3 className="text-blue-400 font-bold mb-2 flex items-center gap-2">
-                                <Mail className="w-5 h-5" />
-                                Segera Cek Email Anda!
-                            </h3>
-                            <p className="text-sm text-gray-300 mb-4">
-                                Kami telah mengirimkan link verifikasi ke email <strong>{formData.email}</strong>. Harap verifikasi akun Anda sebelum masuk.
-                            </p>
-                            <div className="p-3 bg-slate-800 rounded-lg border border-slate-700">
-                                <p className="text-xs text-gray-400">
-                                    💡 Jika tidak ada di inbox, periksa juga folder <strong>Spam</strong>.
-                                </p>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-semibold transition-all border border-slate-600"
-                        >
-                            Ke Halaman Login
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#0f1117] via-[#1a1f2e] to-[#0f1117] flex items-center justify-center p-4">
@@ -230,19 +205,6 @@ const RegisterPage = () => {
                         </button>
                     </form>
 
-                    {/* OTP Register Link */}
-                    <div className="mt-6 p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
-                        <p className="text-sm text-green-400 mb-2 text-center">
-                            💡 Ingin daftar tanpa password?
-                        </p>
-                        <Link
-                            to="/register/otp"
-                            className="block w-full py-2 bg-green-600/20 hover:bg-green-600/30 border border-green-500 rounded-lg font-semibold text-center transition-colors flex items-center justify-center gap-2"
-                        >
-                            <KeyRound className="w-4 h-4" />
-                            Daftar dengan OTP
-                        </Link>
-                    </div>
 
                     {/* Login Link */}
                     <div className="mt-6 text-center">

@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
     Sparkles,
-    GraduationCap,
     Building2,
     LogIn,
     User,
@@ -11,7 +10,9 @@ import {
     ChevronDown,
     Shield,
     LayoutDashboard,
-    BookOpen
+    BookOpen,
+    TrendingUp,
+    GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -79,19 +80,25 @@ const Navbar = ({ onOpenGlossary, onOpenIndustryGuide, extraActions }) => {
                         Analyst AI
                     </button>
                     <button
-                        onClick={() => navigate('/education')}
-                        className={`text-sm font-medium transition-colors ${location.pathname.startsWith('/education') ? 'text-purple-400' : 'text-gray-400 hover:text-white'}`}
+                        onClick={() => navigate('/top-movers')}
+                        className={`text-sm font-medium transition-colors ${location.pathname === '/top-movers' ? 'text-yellow-400' : 'text-gray-400 hover:text-white'}`}
                     >
-                        Edukasi
+                        Top Mover
                     </button>
                     <button
-                        onClick={() => onOpenIndustryGuide ? onOpenIndustryGuide() : navigate('/industry-guide')}
+                        onClick={() => navigate('/pembelajaran')}
+                        className={`text-sm font-medium transition-colors ${location.pathname === '/pembelajaran' ? 'text-emerald-400' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        Belajar
+                    </button>
+                    <button
+                        onClick={() => navigate('/industry-guide')}
                         className={`text-sm font-medium transition-colors ${location.pathname === '/industry-guide' ? 'text-cyan-400' : 'text-gray-400 hover:text-white'}`}
                     >
                         Industri
                     </button>
                     <button
-                        onClick={() => onOpenGlossary ? onOpenGlossary() : navigate('/glossary')}
+                        onClick={() => navigate('/glossary')}
                         className={`text-sm font-medium transition-colors ${location.pathname === '/glossary' ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
                     >
                         Glosarium
@@ -141,10 +148,7 @@ const Navbar = ({ onOpenGlossary, onOpenIndustryGuide, extraActions }) => {
                                         </div>
                                         {/* Badge for Role */}
                                         <div className="flex gap-2">
-                                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${user?.role === 'admin' ? 'bg-red-500/20 text-red-500' :
-                                                user?.role === 'educator' ? 'bg-purple-500/20 text-purple-500' :
-                                                    'bg-blue-500/20 text-blue-500'
-                                                }`}>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider ${user?.role === 'admin' ? 'bg-red-500/20 text-red-500' : 'bg-blue-500/20 text-blue-500'}`}>
                                                 {user?.role || 'user'}
                                             </span>
                                         </div>
@@ -153,29 +157,19 @@ const Navbar = ({ onOpenGlossary, onOpenIndustryGuide, extraActions }) => {
                                     {/* Actions List */}
                                     <div className="p-2">
                                         {/* Dashboard access for Admin/Educator */}
-                                        {(user?.role === 'admin' || user?.role === 'educator') && (
+                                        {user?.role === 'admin' && (
                                             <button
                                                 onClick={() => {
                                                     setShowProfileCard(false);
-                                                    navigate(user.role === 'admin' ? '/dashboard/admin' : '/dashboard/educator');
+                                                    navigate('/dashboard/admin');
                                                 }}
                                                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-xl transition-all group"
                                             >
                                                 <LayoutDashboard size={18} className="text-gray-500 group-hover:text-blue-400" />
-                                                <span>Dashboard {user.role === 'admin' ? 'Admin' : 'Educator'}</span>
+                                                <span>Dashboard Admin</span>
                                             </button>
                                         )}
 
-                                        <button
-                                            onClick={() => {
-                                                setShowProfileCard(false);
-                                                navigate('/education');
-                                            }}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-white hover:bg-gray-800/50 rounded-xl transition-all group md:hidden"
-                                        >
-                                            <GraduationCap size={18} className="text-gray-500 group-hover:text-purple-400" />
-                                            <span>Lihat Edukasi</span>
-                                        </button>
 
                                         <button
                                             onClick={() => {

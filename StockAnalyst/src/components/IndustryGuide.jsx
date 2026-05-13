@@ -394,7 +394,7 @@ const IndustryGuide = ({ isOpen, onClose, standalone = false }) => {
 
   return (
     <div className={standalone ? "" : "fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"}>
-      <div className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full max-w-6xl ${standalone ? "" : "max-h-[90vh] overflow-hidden"} border border-slate-700`}>
+      <div className={`bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl w-full ${standalone ? 'max-w-7xl' : 'max-w-6xl max-h-[90vh] overflow-hidden'} border border-slate-700`}>
         {/* Header */}
         {!standalone && (
           <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-6 flex justify-between items-center">
@@ -449,7 +449,7 @@ const IndustryGuide = ({ isOpen, onClose, standalone = false }) => {
         </div>
 
         {/* Industries List */}
-        <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(90vh - 280px)' }}>
+        <div className={`${standalone ? '' : 'overflow-y-auto max-h-[calc(90vh-280px)]'} p-6`}>
           {filteredIndustries.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-slate-400 text-lg">Tidak ada industri yang ditemukan</p>

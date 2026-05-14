@@ -1,0 +1,8 @@
+name = "stock-analyst-frontend"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+[vars]
+# VITE_SUPABASE_URL = "your-url"
+# VITE_SUPABASE_ANON_KEY = "your-key"
+# VITE_POCKETBASE_URL = "your-pocketbase-url"

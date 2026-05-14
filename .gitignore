@@ -16,6 +16,7 @@ dist-ssr
 .env
 .env.local
 .env.production
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -27,3 +28,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+
+# PocketBase
+pocketbase/pb_data/
+!pocketbase/pb_data/.gitkeep
+
+# OS
+Thumbs.db
+desktop.ini

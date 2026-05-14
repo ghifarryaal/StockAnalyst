@@ -1,32 +1,35 @@
 services:
-  stock-web:
-    container_name: stock-app
+  frontend:
     build:
-      context: .
+      context: ./frontend
       args:
         - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
         - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
-        - VITE_N8N_WEBHOOK_URL=${VITE_N8N_WEBHOOK_URL}
-        - VITE_N8N_NEWS_URL=${VITE_N8N_NEWS_URL}
         - VITE_POCKETBASE_URL=${VITE_POCKETBASE_URL}
-    restart: always
     ports:
       - "3000:80"
     depends_on:
+      - backend
       - pocketbase
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    restart: always
 
   pocketbase:
     build:
-      context: .
-      dockerfile: pocketbase.Dockerfile
-    container_name: stock-pocketbase
-    restart: always
+      context: ./pocketbase
     ports:
       - "8090:8090"
     volumes:
-      - ./pb_data:/pb_data
-      - ./pb_migrations:/pb/pb_migrations
+      - ./pocketbase/pb_data:/pb_data
+      - ./pocketbase/pb_migrations:/pb/pb_migrations
     command:
       - /pb/pocketbase
       - serve
       - --http=0.0.0.0:8090
+    restart: always

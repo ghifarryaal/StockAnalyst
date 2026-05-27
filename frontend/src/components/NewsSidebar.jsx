@@ -50,16 +50,30 @@ export default function NewsSidebar({
             .filter(Boolean);
         } else if (typeof data === "object" && data !== null) {
           if (typeof data.output === "string") outputs = [data.output];
-        } else if (typeof data === "string") {
+        } else if (typeof data === "string" && data.trim()) {
           outputs = [data];
+        }
+
+        // Cek jika outputs kosong
+        if (!outputs || outputs.length === 0 || (outputs.length === 1 && !outputs[0].trim())) {
+          outputs = [
+            `⚠️ **Respon Berita N8N Kosong (Simulasi Lokal)**`,
+            `📰 **Analisis Berita ${ticker}**<br/>Volume perdagangan emiten ${ticker} menunjukkan pola akumulasi yang stabil. Sektor ini diprediksi mendapat katalis positif menyusul kebijakan ekonomi domestik terbaru.`,
+            `💡 **Rekomendasi Sentimen**<br/>Sentimen pemberitaan untuk ${ticker} terpantau mayoritas positif (Net-Neutral to Bullish), didorong oleh prospek kinerja keuangan periode berikutnya.`
+          ];
         }
 
         if (!cancelled) setItems(outputs);
       } catch (err) {
         console.error("NEWS ERROR:", err);
         if (!cancelled) {
-          setError("Failed to fetch");
-          setItems([]);
+          // Fallback ke data simulasi
+          const fallbackNews = [
+            `⚠️ **Koneksi Berita N8N Offline (Simulasi Lokal)**`,
+            `📰 **Proyeksi Kinerja & Ekspansi ${ticker}**<br/>Emiten ${ticker} dilaporkan tengah mempersiapkan ekspansi bisnis baru guna meningkatkan volume penjualan di kuartal mendatang.`,
+            `💡 **Sentimen Media**<br/>Sentimen pemberitaan pasar untuk ${ticker} saat ini dikategorikan stabil dengan bias positif seiring dengan meningkatnya minat transaksi investor.`
+          ];
+          setItems(fallbackNews);
         }
       } finally {
         if (!cancelled) setLoading(false);

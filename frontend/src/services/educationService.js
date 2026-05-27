@@ -1,8 +1,8 @@
-import { pb } from './pocketbase';
+import pb from './pocketbase';
 
 /**
- * Education Service (PocketBase Version)
- * Handles all CRUD operations for education posts
+ * Education Service
+ * Handles all CRUD operations for education posts using PocketBase
  */
 
 // ============================================
@@ -11,6 +11,8 @@ import { pb } from './pocketbase';
 
 /**
  * Create a new education post
+ * @param {Object} postData - Post data
+ * @returns {Object} { post, error }
  */
 export const createPost = async (postData) => {
     try {
@@ -18,27 +20,21 @@ export const createPost = async (postData) => {
             return { post: null, error: 'User not authenticated' };
         }
 
-        const user = pb.authStore.record;
-
-        // Validate content length
-        if (postData.content.length > 2500) {
-            return { post: null, error: 'Content exceeds 2500 characters limit' };
-        }
-
         const data = {
-            educator: user.id,
+            educator_id: pb.authStore.model.id,
             title: postData.title,
             ticker: postData.ticker.toUpperCase(),
             category: postData.category,
             content: postData.content,
-            reference_links: postData.referenceLinks || []
+            reference_links: JSON.stringify(postData.referenceLinks || []),
+            is_deleted: false
         };
 
-        const post = await pb.collection('education_posts').create(data, {
-            expand: 'educator'
+        const record = await pb.collection('education_posts').create(data, {
+            expand: 'educator_id'
         });
 
-        return { post, error: null };
+        return { post: record, error: null };
     } catch (err) {
         console.error('Exception in createPost:', err);
         return { post: null, error: err.message };
@@ -51,29 +47,38 @@ export const createPost = async (postData) => {
 
 /**
  * Get all education posts (feed)
+ * @param {Object} options - Query options
+ * @returns {Object} { posts, error, count }
  */
 export const getPosts = async (options = {}) => {
     try {
-        const { category, ticker, limit = 20, offset = 0 } = options;
-        
-        const page = Math.floor(offset / limit) + 1;
+        const { category, ticker, limit = 20, page = 1 } = options;
 
-        let filter = 'is_deleted = false';
+        let filters = ['is_deleted = false'];
+        
         if (category) {
-            filter += ` && category = "${category}"`;
+            filters.push(`category = "${category}"`);
         }
         if (ticker) {
-            filter += ` && ticker = "${ticker.toUpperCase()}"`;
+            filters.push(`ticker = "${ticker.toUpperCase()}"`);
         }
 
         const resultList = await pb.collection('education_posts').getList(page, limit, {
-            filter: filter,
+            filter: filters.join(' && '),
             sort: '-created',
-            expand: 'educator,educator.educator_profiles_via_educator'
+            expand: 'educator_id'
         });
 
+        // Map PocketBase record to expected format
+        const posts = resultList.items.map(record => ({
+            ...record,
+            created_at: record.created,
+            updated_at: record.updated,
+            educator: record.expand?.educator_id || { full_name: 'Unknown Educator' }
+        }));
+
         return { 
-            posts: resultList.items || [], 
+            posts: posts, 
             error: null, 
             count: resultList.totalItems 
         };
@@ -85,35 +90,46 @@ export const getPosts = async (options = {}) => {
 
 /**
  * Get a single post by ID
+ * @param {string} postId - Post ID
+ * @returns {Object} { post, error }
  */
 export const getPostById = async (postId) => {
     try {
-        const post = await pb.collection('education_posts').getOne(postId, {
-            expand: 'educator,educator.educator_profiles_via_educator'
+        const record = await pb.collection('education_posts').getOne(postId, {
+            expand: 'educator_id'
         });
 
-        if (post.is_deleted) {
-            return { post: null, error: 'Post has been deleted' };
+        if (record.is_deleted) {
+            return { post: null, error: 'Post not found or deleted' };
         }
+
+        const post = {
+            ...record,
+            created_at: record.created,
+            updated_at: record.updated,
+            educator: record.expand?.educator_id || { full_name: 'Unknown Educator' }
+        };
 
         return { post, error: null };
     } catch (err) {
-        console.error('Exception in getPostById:', err);
+        console.error('Error fetching post:', err);
         return { post: null, error: err.message };
     }
 };
 
 /**
  * Get posts by educator
+ * @param {string} educatorId - Educator user ID
+ * @returns {Object} { posts, error }
  */
 export const getPostsByEducator = async (educatorId) => {
     try {
-        const posts = await pb.collection('education_posts').getFullList({
-            filter: `educator = "${educatorId}" && is_deleted = false`,
+        const records = await pb.collection('education_posts').getFullList({
+            filter: `educator_id = "${educatorId}" && is_deleted = false`,
             sort: '-created'
         });
 
-        return { posts: posts || [], error: null };
+        return { posts: records, error: null };
     } catch (err) {
         console.error('Exception in getPostsByEducator:', err);
         return { posts: [], error: err.message };
@@ -126,6 +142,9 @@ export const getPostsByEducator = async (educatorId) => {
 
 /**
  * Update a post
+ * @param {string} postId - Post ID
+ * @param {Object} updates - Fields to update
+ * @returns {Object} { post, error }
  */
 export const updatePost = async (postId, updates) => {
     try {
@@ -133,25 +152,16 @@ export const updatePost = async (postId, updates) => {
             return { post: null, error: 'User not authenticated' };
         }
 
-        const user = pb.authStore.record;
-
-        // Validate content length if updating content
-        if (updates.content && updates.content.length > 2500) {
-            return { post: null, error: 'Content exceeds 2500 characters limit' };
-        }
-
         // Ensure ticker is uppercase if provided
         if (updates.ticker) {
             updates.ticker = updates.ticker.toUpperCase();
         }
 
-        const post = await pb.collection('education_posts').update(postId, updates, {
-            expand: 'educator'
-        });
+        const record = await pb.collection('education_posts').update(postId, updates);
 
-        return { post, error: null };
+        return { post: record, error: null };
     } catch (err) {
-        console.error('Exception in updatePost:', err);
+        console.error('Error updating post:', err);
         return { post: null, error: err.message };
     }
 };
@@ -162,6 +172,8 @@ export const updatePost = async (postId, updates) => {
 
 /**
  * Soft delete a post
+ * @param {string} postId - Post ID
+ * @returns {Object} { success, error }
  */
 export const deletePost = async (postId) => {
     try {
@@ -169,43 +181,42 @@ export const deletePost = async (postId) => {
             return { success: false, error: 'User not authenticated' };
         }
 
-        const user = pb.authStore.record;
-
         await pb.collection('education_posts').update(postId, {
             is_deleted: true,
             deleted_at: new Date().toISOString(),
-            deleted_by: user.id,
+            deleted_by: pb.authStore.model.id,
             deleted_reason: 'Deleted by educator'
         });
 
         return { success: true, error: null };
     } catch (err) {
-        console.error('Exception in deletePost:', err);
+        console.error('Error deleting post:', err);
         return { success: false, error: err.message };
     }
 };
 
 /**
- * Admin delete post
+ * Delete a post as administrator
+ * @param {string} postId - Post ID
+ * @param {string} reason - Deletion reason
+ * @returns {Object} { success, error }
  */
-export const adminDeletePost = async (postId, reason) => {
+export const adminDeletePost = async (postId, reason = 'Deleted by admin') => {
     try {
         if (!pb.authStore.isValid) {
             return { success: false, error: 'User not authenticated' };
         }
 
-        const user = pb.authStore.record;
-
         await pb.collection('education_posts').update(postId, {
             is_deleted: true,
             deleted_at: new Date().toISOString(),
-            deleted_by: user.id,
+            deleted_by: pb.authStore.model.id,
             deleted_reason: reason
         });
 
         return { success: true, error: null };
     } catch (err) {
-        console.error('Exception in adminDeletePost:', err);
+        console.error('Error admin deleting post:', err);
         return { success: false, error: err.message };
     }
 };
@@ -216,16 +227,26 @@ export const adminDeletePost = async (postId, reason) => {
 
 /**
  * Search posts by keyword
+ * @param {string} keyword - Search keyword
+ * @param {number} limit - Number of results
+ * @returns {Object} { posts, error }
  */
 export const searchPosts = async (keyword, limit = 20) => {
     try {
-        const posts = await pb.collection('education_posts').getList(1, limit, {
+        const resultList = await pb.collection('education_posts').getList(1, limit, {
             filter: `is_deleted = false && (title ~ "${keyword}" || content ~ "${keyword}" || ticker ~ "${keyword}")`,
             sort: '-created',
-            expand: 'educator'
+            expand: 'educator_id'
         });
 
-        return { posts: posts.items || [], error: null };
+        const posts = resultList.items.map(record => ({
+            ...record,
+            created_at: record.created,
+            updated_at: record.updated,
+            educator: record.expand?.educator_id || { full_name: 'Unknown Educator' }
+        }));
+
+        return { posts: posts, error: null };
     } catch (err) {
         console.error('Exception in searchPosts:', err);
         return { posts: [], error: err.message };

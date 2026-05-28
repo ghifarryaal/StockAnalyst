@@ -83,14 +83,43 @@ function App() {
     setLoading(true);
 
     try {
-      // Timeout 30 detik untuk fetch
+      // Ambil data laporan keuangan terlebih dahulu
+      let incomeData = null;
+      let balanceData = null;
+      let cashflowData = null;
+
+      try {
+        const cleanTicker = t.trim().toUpperCase();
+        const suffixTicker = cleanTicker.length === 4 ? `${cleanTicker}.JK` : cleanTicker;
+
+        const [incRes, balRes, cfRes] = await Promise.all([
+          fetch(`https://api.indonesiastockanalyst.my.id/api/chart/fundamental/${suffixTicker}`).catch(() => null),
+          fetch(`https://api.indonesiastockanalyst.my.id/api/chart/balance/${suffixTicker}`).catch(() => null),
+          fetch(`https://api.indonesiastockanalyst.my.id/api/chart/cashflow/${suffixTicker}`).catch(() => null)
+        ]);
+
+        if (incRes && incRes.ok) incomeData = await incRes.json();
+        if (balRes && balRes.ok) balanceData = await balRes.json();
+        if (cfRes && cfRes.ok) cashflowData = await cfRes.json();
+      } catch (e) {
+        console.warn("Gagal mengambil data laporan keuangan untuk N8N:", e);
+      }
+
+      // Timeout 30 detik untuk fetch N8N
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const res = await fetch(N8N_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: t, ticker: t, stock: t }),
+        body: JSON.stringify({
+          prompt: t,
+          ticker: t,
+          stock: t,
+          income_statement: incomeData,
+          balance_sheet: balanceData,
+          cashflow: cashflowData
+        }),
         signal: controller.signal
       });
 

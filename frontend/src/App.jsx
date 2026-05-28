@@ -7,7 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 
 function App() {
-  const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
+  const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || "https://tutorial-n8n.indonesiastockanalyst.my.id/webhook/analisa-saham";
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([

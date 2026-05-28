@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Newspaper, Loader2, ChevronDown, ChevronUp, Sparkles, Search } from "lucide-react";
 
-const N8N_NEWS_URL = import.meta.env.VITE_N8N_NEWS_URL;
+const N8N_NEWS_URL = import.meta.env.VITE_N8N_NEWS_URL || "https://tutorial-n8n.indonesiastockanalyst.my.id/webhook/analisis-berita";
 
 export default function NewsSidebar({
   ticker,

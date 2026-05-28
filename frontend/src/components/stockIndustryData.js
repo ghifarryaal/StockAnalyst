@@ -131,6 +131,7 @@ export const stockIndustryMap = {
 };
 
 export const getStockIndustry = (ticker) => {
+  if (!ticker || typeof ticker !== 'string') return null;
   // Extract stock code from ticker (e.g., "BBCA.JK" -> "BBCA")
   const code = ticker.replace('.JK', '').toUpperCase();
   return stockIndustryMap[code] || null;

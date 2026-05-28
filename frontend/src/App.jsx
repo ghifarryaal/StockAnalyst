@@ -114,7 +114,12 @@ function App() {
         const fallbackText = generateFallbackAnalysis(t);
         setMessages(m => {
           const c = [...m];
-          c[c.length - 1].content = `⚠️ **Respon N8N Kosong (Menggunakan Simulasi Lokal)**\n\n` + fallbackText + `\n\n---\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`;
+          if (c.length > 0) {
+            c[c.length - 1] = {
+              ...c[c.length - 1],
+              content: `⚠️ **Respon N8N Kosong (Menggunakan Simulasi Lokal)**\n\n` + fallbackText + `\n\n---\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`
+            };
+          }
           return c;
         });
       } else {
@@ -137,13 +142,23 @@ function App() {
         if (lowerText.includes('error') || lowerText.includes('not found') || lowerText.includes('tidak ditemukan')) {
           setMessages(m => {
             const c = [...m];
-            c[c.length - 1].content = `❌ **Kode Saham Tidak Ditemukan**\n\nKode saham **${t}** tidak valid atau tidak tersedia.\n\n💡 **Tips:**\n• Pastikan kode saham benar (contoh: BBCA, BBRI, TLKM)\n• Gunakan kode saham Indonesia yang terdaftar di BEI\n• Coba kode saham lain\n\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`;
+            if (c.length > 0) {
+              c[c.length - 1] = {
+                ...c[c.length - 1],
+                content: `❌ **Kode Saham Tidak Ditemukan**\n\nKode saham **${t}** tidak valid atau tidak tersedia.\n\n💡 **Tips:**\n• Pastikan kode saham benar (contoh: BBCA, BBRI, TLKM)\n• Gunakan kode saham Indonesia yang terdaftar di BEI\n• Coba kode saham lain\n\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`
+              };
+            }
             return c;
           });
         } else {
           setMessages(m => {
             const c = [...m];
-            c[c.length - 1].content = finalContent + `\n\n---\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`;
+            if (c.length > 0) {
+              c[c.length - 1] = {
+                ...c[c.length - 1],
+                content: finalContent + `\n\n---\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`
+              };
+            }
             return c;
           });
         }
@@ -154,7 +169,12 @@ function App() {
       const fallbackText = generateFallbackAnalysis(t);
       setMessages(m => {
         const c = [...m];
-        c[c.length - 1].content = `⚠️ **Koneksi N8N Gagal / Offline (Menggunakan Simulasi Lokal)**\n\n` + fallbackText + `\n\n---\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`;
+        if (c.length > 0) {
+          c[c.length - 1] = {
+            ...c[c.length - 1],
+            content: `⚠️ **Koneksi N8N Gagal / Offline (Menggunakan Simulasi Lokal)**\n\n` + fallbackText + `\n\n---\n📊 *Sisa kuota harian Anda: ${50 - usageData.count}/50*`
+          };
+        }
         return c;
       });
     } finally {

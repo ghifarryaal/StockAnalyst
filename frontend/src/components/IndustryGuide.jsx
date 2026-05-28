@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Search, X, TrendingUp, TrendingDown, Loader2, Globe, AlertCircle } from 'lucide-react';
-import { getIndustries } from '../services/industryService';
 
 const IndustryGuide = ({ isOpen, onClose, standalone = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,19 +14,9 @@ const IndustryGuide = ({ isOpen, onClose, standalone = false }) => {
     }
   }, [isOpen, standalone]);
 
-  const loadIndustries = async () => {
+  const loadIndustries = () => {
     setLoading(true);
-    const { industries: data, error: err } = await getIndustries();
-    
-    if (err) {
-      console.warn('Using fallback data due to fetch error:', err);
-      // Use fallback data if PB is not ready
-      setIndustries(fallbackIndustryData);
-    } else if (data.length > 0) {
-      setIndustries(data);
-    } else {
-      setIndustries(fallbackIndustryData);
-    }
+    setIndustries(fallbackIndustryData);
     setLoading(false);
   };
 
